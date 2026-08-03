@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { AlertCircle, CheckCircle2, Info, AlertTriangle } from 'lucide-react';
+import { WarningCircle, CheckCircle, Info, Warning } from '@phosphor-icons/react';
 
 type AlertVariant = 'info' | 'success' | 'warning' | 'error';
 
@@ -21,19 +21,19 @@ const config: Record<AlertVariant, { bg: string; border: string; text: string; i
     bg: 'bg-success-50',
     border: 'border-success-500/20',
     text: 'text-success-500',
-    icon: <CheckCircle2 className="w-5 h-5" />,
+    icon: <CheckCircle className="w-5 h-5" />,
   },
   warning: {
     bg: 'bg-warning-50',
     border: 'border-warning-500/20',
     text: 'text-warning-500',
-    icon: <AlertTriangle className="w-5 h-5" />,
+    icon: <Warning className="w-5 h-5" />,
   },
   error: {
     bg: 'bg-danger-50',
     border: 'border-danger-500/20',
     text: 'text-danger-500',
-    icon: <AlertCircle className="w-5 h-5" />,
+    icon: <WarningCircle className="w-5 h-5" />,
   },
 };
 

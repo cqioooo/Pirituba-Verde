@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { Spinner } from '@/components/ui';
 import { PIRITUBA_CENTER, DETAIL_ZOOM } from '@/types';
-import { MapPin, Navigation } from 'lucide-react';
+import { MapPin, NavigationArrow } from '@phosphor-icons/react';
 
 const pinIcon = L.divIcon({
   className: 'pv-marker',
@@ -95,7 +95,7 @@ export function LocationStep({ latitude, longitude, onLocationChange }: Location
         {geo.loading ? (
           <Spinner size="sm" />
         ) : (
-          <Navigation className="w-4 h-4" />
+          <NavigationArrow className="w-4 h-4" />
         )}
         {geo.loading ? 'Obtendo localização...' : 'Usar minha localização atual'}
       </button>
@@ -113,8 +113,8 @@ export function LocationStep({ latitude, longitude, onLocationChange }: Location
           zoomControl={true}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
           <MapClickHandler onLocationChange={onLocationChange} />
           {hasSelectedLocation && (

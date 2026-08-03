@@ -9,21 +9,20 @@ import { Badge } from '@/components/ui';
 
 function createMarkerIcon(color: string, selected: boolean = false): L.DivIcon {
   const size = selected ? 16 : 12;
-  const borderSize = selected ? 3 : 2;
   return L.divIcon({
     className: 'pv-marker',
     html: `<div style="
       width: ${size}px;
       height: ${size}px;
       background: ${color};
-      border: ${borderSize}px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      ${selected ? 'transform: scale(1.3);' : ''}
+      border-radius: 2px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transform: rotate(45deg) ${selected ? 'scale(1.4)' : ''};
+      transition: transform 0.2s;
     "></div>`,
-    iconSize: [size + borderSize * 2, size + borderSize * 2],
-    iconAnchor: [(size + borderSize * 2) / 2, (size + borderSize * 2) / 2],
-    popupAnchor: [0, -(size / 2 + borderSize)],
+    iconSize: [size * 1.5, size * 1.5],
+    iconAnchor: [(size * 1.5) / 2, (size * 1.5) / 2],
+    popupAnchor: [0, -size],
   });
 }
 

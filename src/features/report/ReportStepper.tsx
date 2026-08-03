@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check } from '@phosphor-icons/react';
 
 interface Step {
   label: string;
@@ -90,7 +90,7 @@ export function ReportStepper({
       </div>
 
       {/* Navigation */}
-      <div className="shrink-0 pt-4 mt-4 border-t border-surface-100 flex items-center justify-between gap-3">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-surface-100 flex items-center justify-between gap-3 z-[100] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] md:static md:p-0 md:pt-4 md:mt-4 md:shadow-none safe-area-pb">
         {showBack && currentStep > 0 ? (
           <Button variant="ghost" size="sm" onClick={onBack} icon={<ArrowLeft className="w-4 h-4" />}>
             Voltar

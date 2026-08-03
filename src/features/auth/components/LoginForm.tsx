@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
 import { Button, Input, Alert } from '@/components/ui';
 import { validateEmail, validatePassword } from '../validators';
-import { Mail, Lock } from 'lucide-react';
+import { Envelope, Lock } from '@phosphor-icons/react';
 import { isSupabaseConfigured } from '@/integrations/supabase/client';
 
 export function LoginForm() {
@@ -69,7 +69,7 @@ export function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           error={errors.email}
-          icon={<Mail className="w-4 h-4" />}
+          icon={<Envelope className="w-4 h-4" />}
           required
           autoComplete="email"
         />

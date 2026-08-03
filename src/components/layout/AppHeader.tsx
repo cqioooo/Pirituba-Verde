@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
 import { Button } from '@/components/ui';
-import { Leaf, LogOut, User } from 'lucide-react';
+import { Leaf, SignOut, User, Bell } from '@phosphor-icons/react';
 
 export function AppHeader() {
   const { user, logout } = useAuth();
@@ -29,7 +29,14 @@ export function AppHeader() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/app/notificacoes"
+              className="p-2 text-surface-400 hover:text-surface-600 transition-colors relative"
+              aria-label="Notificações"
+            >
+              <Bell className="w-5 h-5" />
+            </Link>
             <Link
               to="/app/perfil"
               className="flex items-center gap-2 text-sm text-surface-600 hover:text-surface-900 transition-colors"
@@ -44,7 +51,7 @@ export function AppHeader() {
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              icon={<LogOut className="w-4 h-4" />}
+              icon={<SignOut className="w-4 h-4" />}
               aria-label="Sair da conta"
             >
               <span className="hidden sm:inline">Sair</span>

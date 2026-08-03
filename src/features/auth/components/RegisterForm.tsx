@@ -14,7 +14,7 @@ import {
   validateStreet,
 } from '../validators';
 import { formatCPF, formatPhone, formatDate } from '@/lib/utils';
-import { Shield } from 'lucide-react';
+import { Shield } from '@phosphor-icons/react';
 
 interface FormData {
   fullName: string;

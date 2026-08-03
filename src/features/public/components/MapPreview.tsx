@@ -1,7 +1,7 @@
 
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui';
-import { Map } from 'lucide-react';
+import { MapTrifold } from '@phosphor-icons/react';
 
 export function MapPreview() {
   return (
@@ -45,7 +45,7 @@ export function MapPreview() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center space-y-4 p-6">
               <div className="w-14 h-14 mx-auto rounded-2xl bg-white shadow-elevated flex items-center justify-center">
-                <Map className="w-7 h-7 text-primary-600" />
+                <MapTrifold className="w-7 h-7 text-primary-600" />
               </div>
               <div>
                 <p className="text-base font-semibold text-surface-800">

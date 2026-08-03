@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui';
-import { Bell } from 'lucide-react';
+import { Bell } from '@phosphor-icons/react';
 
 export function Notifications() {
   return (

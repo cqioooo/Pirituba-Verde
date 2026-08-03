@@ -1,5 +1,5 @@
 import { Outlet, Link } from 'react-router-dom';
-import { Leaf } from 'lucide-react';
+import { Leaf } from '@phosphor-icons/react';
 
 export function AuthLayout() {
   return (

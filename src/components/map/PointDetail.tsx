@@ -1,7 +1,7 @@
 import type { PontoAutenticado } from '@/types';
 import { WASTE_CATEGORY_LABELS, WASTE_CATEGORY_COLORS, POINT_STATUS_LABELS, POINT_STATUS_VARIANTS } from '@/types';
 import { Badge, Button } from '@/components/ui';
-import { MapPin, Calendar, Users, RefreshCw, AlertTriangle, ChevronRight } from 'lucide-react';
+import { MapPin, Calendar, Users, Warning, CaretRight, ArrowsClockwise } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { useHistoricoPonto } from '@/services/queries';
 import { ConfirmButton } from './ConfirmButton';
@@ -23,9 +23,9 @@ function eventIcon(type: string) {
   switch (type) {
     case 'novo': return <Calendar className="w-3 h-3" />;
     case 'confirmado': return <Users className="w-3 h-3" />;
-    case 'em_analise': return <RefreshCw className="w-3 h-3" />;
-    case 'recorrente': return <AlertTriangle className="w-3 h-3" />;
-    default: return <RefreshCw className="w-3 h-3" />;
+    case 'em_analise': return <ArrowsClockwise className="w-3 h-3" />;
+    case 'recorrente': return <Warning className="w-3 h-3" />;
+    default: return <ArrowsClockwise className="w-3 h-3" />;
   }
 }
 
@@ -124,7 +124,7 @@ export function PointDetail({ point }: PointDetailProps) {
         )}
         
         <Link to={`/app/nova-denuncia?pointId=${point.id}`} className="block">
-          <Button variant={isResolvido ? "primary" : "outline"} fullWidth size="sm" icon={<ChevronRight className="w-4 h-4" />}>
+          <Button variant={isResolvido ? "primary" : "outline"} fullWidth size="sm" icon={<CaretRight className="w-4 h-4" />}>
             Nova denúncia neste local
           </Button>
         </Link>

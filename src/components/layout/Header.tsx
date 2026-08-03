@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui';
-import { Menu, X, Leaf } from 'lucide-react';
+import { List, X, Leaf } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 const navLinks = [
@@ -13,7 +13,7 @@ export function Header() {
   const location = useLocation();
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-surface-200">
+    <header className="sticky top-0 z-50 bg-white border-b border-surface-200 shadow-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -22,7 +22,7 @@ export function Header() {
             className="flex items-center gap-2 text-primary-700 hover:text-primary-600 transition-colors"
           >
             <Leaf className="w-7 h-7 text-primary-600" />
-            <span className="text-lg font-bold tracking-tight">
+            <span className="font-heading text-xl font-bold tracking-tight">
               Pirituba Verde
             </span>
           </Link>
@@ -65,7 +65,7 @@ export function Header() {
             aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
             aria-expanded={menuOpen}
           >
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {menuOpen ? <X className="w-5 h-5" /> : <List className="w-5 h-5" />}
           </button>
         </div>
 

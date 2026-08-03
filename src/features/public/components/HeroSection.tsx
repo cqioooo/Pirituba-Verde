@@ -1,54 +1,67 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui';
-import { MapPin, ArrowRight } from 'lucide-react';
+import { MapPin, ArrowRight } from '@phosphor-icons/react';
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-primary-50/80 to-surface-50">
-      {/* Detalhe visual sutil */}
-      <div className="absolute inset-0 opacity-[0.03]" aria-hidden="true">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232D6A4F' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
-      </div>
+    <section className="relative overflow-hidden bg-surface-50 pt-16 sm:pt-24 pb-20 sm:pb-32">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+          
+          {/* Esquerda: Texto */}
+          <div className="flex-1 space-y-10 text-center lg:text-left">
 
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <div className="max-w-2xl mx-auto text-center space-y-6">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 text-primary-700 text-xs font-medium">
-            <MapPin className="w-3.5 h-3.5" />
-            Pirituba, São Paulo
+            <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold text-surface-900 leading-[1.1] tracking-tight">
+              Mapeie.<br/>Denuncie.<br/>
+              <span className="text-primary-700">Transforme.</span>
+            </h1>
+
+            <p className="text-xl text-surface-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
+              Plataforma de inteligência territorial para monitoramento de
+              descarte irregular. Participação cidadã a serviço de um ambiente mais limpo.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 justify-center lg:justify-start">
+              <Link to="/cadastro" className="w-full sm:w-auto">
+                <Button size="lg" fullWidth icon={<ArrowRight className="w-5 h-5" />} className="h-14 px-8 text-lg rounded-2xl">
+                  Registrar denúncia
+                </Button>
+              </Link>
+              <Link to="/mapa-publico" className="w-full sm:w-auto">
+                <Button variant="ghost" size="lg" fullWidth className="h-14 px-8 text-lg rounded-2xl">
+                  Explorar o mapa
+                </Button>
+              </Link>
+            </div>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-surface-900 leading-tight tracking-tight">
-            Mapeie. Denuncie.{' '}
-            <span className="text-primary-600">Acompanhe.</span>
-          </h1>
-
-          {/* Subheadline */}
-          <p className="text-base sm:text-lg text-surface-600 leading-relaxed max-w-xl mx-auto">
-            Uma plataforma de inteligência territorial para identificar e
-            monitorar pontos recorrentes de descarte irregular de resíduos
-            urbanos. Participação cidadã a serviço de um bairro mais limpo.
-          </p>
-
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <Link to="/cadastro">
-              <Button size="lg" icon={<ArrowRight className="w-4 h-4" />}>
-                Participar agora
-              </Button>
-            </Link>
-            <Link to="/mapa-publico">
-              <Button variant="outline" size="lg">
-                Ver mapa público
-              </Button>
-            </Link>
+          {/* Direita: Imagem Orgânica */}
+          <div className="flex-1 w-full relative">
+            <div className="aspect-square w-full max-w-[600px] mx-auto lg:ml-auto relative">
+              {/* Organic Shape Placeholder */}
+              <div className="absolute inset-0 bg-primary-200 rounded-[60px] rounded-bl-[120px] rounded-tr-[120px] overflow-hidden transform -rotate-3 transition-transform hover:rotate-0 duration-700">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary-600/20 to-transparent mix-blend-overlay"></div>
+                {/* Aqui entrará a imagem real ambiental futuramente */}
+                <div className="w-full h-full bg-primary-100 flex items-center justify-center">
+                  <span className="text-primary-600/50 font-heading text-2xl font-bold">Natureza & Cidade</span>
+                </div>
+              </div>
+              
+              {/* Floating element */}
+              <div className="absolute -bottom-8 -left-8 bg-white p-6 rounded-3xl shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary-50 rounded-full flex items-center justify-center text-primary-600">
+                    <MapPin className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-surface-500 font-medium">Pontos mapeados</p>
+                    <p className="font-heading text-2xl font-bold text-surface-900">+1.200</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+
         </div>
       </div>
     </section>

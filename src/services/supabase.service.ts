@@ -19,6 +19,12 @@ import type {
   HistoricoStatusPonto,
   Notificacao,
   Perfil,
+  PontoGestor,
+  DashboardResumo,
+  ModeracaoOcorrencia,
+  StatusPonto,
+  Confirmacao,
+  IndicadorDiario,
 } from '@/types';
 
 // ── Helpers ──
@@ -255,4 +261,176 @@ export async function fetchNotificacoes(userId: string): Promise<Notificacao[]> 
     .limit(50);
   if (error) throw error;
   return (data ?? []) as Notificacao[];
+}
+
+// ═══════════════════════════════════════════════
+// FUNÇÕES DA GESTÃO
+// ═══════════════════════════════════════════════
+
+export async function fetchDashboardResumo(): Promise<DashboardResumo> {
+  assertConfigured();
+  const { data, error } = await supabase
+    .from('v_dashboard_resumo')
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data as DashboardResumo;
+}
+
+export async function fetchIndicadoresDiarios(): Promise<IndicadorDiario[]> {
+  assertConfigured();
+  const { data, error } = await supabase
+    .from('indicadores_diarios')
+    .select('*')
+    .order('data', { ascending: true }) // Recharts prefere ordenação temporal crescente
+    .limit(30); // Últimos 30 dias
+
+  if (error) throw error;
+  return (data ?? []) as IndicadorDiario[];
+}
+
+export async function fetchPontosGestor(filters?: any): Promise<PontoGestor[]> {
+  assertConfigured();
+  let query = supabase.from('v_pontos_gestor').select('*');
+
+  if (filters?.status && filters.status.length > 0) {
+    query = query.in('status', filters.status);
+  }
+  if (filters?.categorias && filters.categorias.length > 0) {
+    query = query.in('categoria_principal', filters.categorias);
+  }
+  // Pode adicionar mais filtros depois (ex: bairro, criticidade)
+  
+  query = query.order('criticidade', { ascending: false, nullsFirst: false });
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as PontoGestor[];
+}
+
+export async function fetchPontoGestorById(id: string): Promise<PontoGestor | null> {
+  assertConfigured();
+  const { data, error } = await supabase
+    .from('v_pontos_gestor')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data as PontoGestor | null;
+}
+
+export async function fetchOcorrenciasByPonto(pontoId: string): Promise<Ocorrencia[]> {
+  assertConfigured();
+  const { data, error } = await supabase
+    .from('ocorrencias')
+    .select('*, pontos_descarte(endereco)')
+    .eq('ponto_id', pontoId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Ocorrencia[];
+}
+
+export async function fetchConfirmacoesByPonto(pontoId: string): Promise<Confirmacao[]> {
+  assertConfigured();
+  const { data, error } = await supabase
+    .from('confirmacoes')
+    .select('*')
+    .eq('ponto_id', pontoId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Confirmacao[];
+}
+
+export async function fetchModeracoesPendentes(): Promise<(ModeracaoOcorrencia & { ocorrencia: Ocorrencia })[]> {
+  assertConfigured();
+  const { data, error } = await supabase
+    .from('moderacao_ocorrencias')
+    .select('*, ocorrencia:ocorrencias(*)')
+    .eq('status', 'pendente')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as (ModeracaoOcorrencia & { ocorrencia: Ocorrencia })[];
+}
+
+export async function updatePontoStatus(
+  id: string,
+  novoStatus: StatusPonto,
+  motivo?: string,
+  alteradoPor?: string
+): Promise<void> {
+  assertConfigured();
+  
+  // 1. Atualizar o status do ponto
+  const { error: updateError } = await supabase
+    .from('pontos_descarte')
+    .update({ status: novoStatus, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  
+  if (updateError) throw updateError;
+
+  // 2. Inserir histórico
+  if (alteradoPor) {
+    const { error: histError } = await supabase
+      .from('historico_status_ponto')
+      .insert({
+        ponto_id: id,
+        status_novo: novoStatus,
+        status_anterior: null, // Ideal seria buscar antes, mas vamos simplificar
+        alterado_por: alteradoPor,
+        motivo: motivo || null,
+      });
+      
+    if (histError) console.error('Erro ao inserir histórico:', histError);
+  }
+}
+
+export async function approveModeracao(id: string, observacao?: string, moderadoPor?: string): Promise<void> {
+  assertConfigured();
+  // Busca a moderação para achar a ocorrência
+  const { data: mod } = await supabase.from('moderacao_ocorrencias').select('*').eq('id', id).single();
+  if (!mod) throw new Error('Moderação não encontrada');
+
+  const { error: updateModError } = await supabase
+    .from('moderacao_ocorrencias')
+    .update({
+      status: 'aprovada',
+      observacao: observacao || null,
+      moderado_por: moderadoPor,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id);
+  if (updateModError) throw updateModError;
+
+  // Aprova a ocorrência também
+  await supabase.from('ocorrencias').update({ status: 'aprovada' }).eq('id', mod.ocorrencia_id);
+
+  // Busca o ponto_id da ocorrência e atualiza para em_confirmacao (simplificado)
+  const { data: oc } = await supabase.from('ocorrencias').select('ponto_id').eq('id', mod.ocorrencia_id).single();
+  if (oc?.ponto_id) {
+    await updatePontoStatus(oc.ponto_id, 'em_confirmacao', 'Moderação aprovada', moderadoPor);
+  }
+}
+
+export async function rejectModeracao(id: string, observacao?: string, moderadoPor?: string): Promise<void> {
+  assertConfigured();
+  const { data: mod } = await supabase.from('moderacao_ocorrencias').select('*').eq('id', id).single();
+  if (!mod) throw new Error('Moderação não encontrada');
+
+  const { error: updateModError } = await supabase
+    .from('moderacao_ocorrencias')
+    .update({
+      status: 'rejeitada',
+      observacao: observacao || null,
+      moderado_por: moderadoPor,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id);
+  if (updateModError) throw updateModError;
+
+  await supabase.from('ocorrencias').update({ status: 'rejeitada' }).eq('id', mod.ocorrencia_id);
+
+  const { data: oc } = await supabase.from('ocorrencias').select('ponto_id').eq('id', mod.ocorrencia_id).single();
+  if (oc?.ponto_id) {
+    await updatePontoStatus(oc.ponto_id, 'invalido', 'Moderação rejeitada', moderadoPor);
+  }
 }

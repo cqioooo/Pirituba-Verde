@@ -6,7 +6,7 @@ import {
   TIME_LABELS,
   VOLUME_LABELS,
 } from '@/types';
-import { Camera, X } from 'lucide-react';
+import { Camera, X } from '@phosphor-icons/react';
 
 interface FormStepProps {
   draft: ReportDraft;

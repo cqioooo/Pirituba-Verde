@@ -4,6 +4,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { GestaoLayout } from '@/components/layout/GestaoLayout';
 
 // Proteção de rota
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
@@ -20,10 +21,20 @@ import { RegisterForm } from '@/features/auth/components/RegisterForm';
 import { Dashboard } from '@/features/citizen/pages/Dashboard';
 import { MapPage } from '@/features/citizen/pages/MapPage';
 import { MyReports } from '@/features/citizen/pages/MyReports';
-import { HistoryPage } from '@/features/citizen/pages/HistoryPage';
+
 import { Notifications } from '@/features/citizen/pages/Notifications';
 import { Profile } from '@/features/citizen/pages/Profile';
 import { NewReportPage } from '@/features/citizen/pages/NewReportPage';
+
+// Features - Gestão
+import { OverviewPage } from '@/features/gestao/pages/OverviewPage';
+import { AlertsPage } from '@/features/gestao/pages/AlertsPage';
+import { GestaoMapPage } from '@/features/gestao/pages/GestaoMapPage';
+import { AnalyticsPage } from '@/features/gestao/pages/AnalyticsPage';
+import { PointsListPage } from '@/features/gestao/pages/PointsListPage';
+import { PointDetailPage } from '@/features/gestao/pages/PointDetailPage';
+import { ModerationPage } from '@/features/gestao/pages/ModerationPage';
+import { SettingsPage } from '@/features/gestao/pages/SettingsPage';
 
 export const router = createBrowserRouter([
   // ── Rotas públicas ──
@@ -80,10 +91,7 @@ export const router = createBrowserRouter([
         path: '/app/minhas-denuncias',
         element: <MyReports />,
       },
-      {
-        path: '/app/historico',
-        element: <HistoryPage />,
-      },
+
       {
         path: '/app/notificacoes',
         element: <Notifications />,
@@ -91,6 +99,49 @@ export const router = createBrowserRouter([
       {
         path: '/app/perfil',
         element: <Profile />,
+      },
+    ],
+  },
+
+  // ── Rotas da Gestão ──
+  {
+    element: (
+      <ProtectedRoute requiredRoles={['gestor', 'analista', 'admin']}>
+        <GestaoLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: '/gestao',
+        element: <OverviewPage />,
+      },
+      {
+        path: '/gestao/alertas',
+        element: <AlertsPage />,
+      },
+      {
+        path: '/gestao/mapa',
+        element: <GestaoMapPage />,
+      },
+      {
+        path: '/gestao/analytics',
+        element: <AnalyticsPage />,
+      },
+      {
+        path: '/gestao/pontos',
+        element: <PointsListPage />,
+      },
+      {
+        path: '/gestao/pontos/:id',
+        element: <PointDetailPage />,
+      },
+      {
+        path: '/gestao/moderacao',
+        element: <ModerationPage />,
+      },
+      {
+        path: '/gestao/configuracoes',
+        element: <SettingsPage />,
       },
     ],
   },

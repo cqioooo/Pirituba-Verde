@@ -1,19 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  Map,
-  FileText,
-  History,
-  Bell,
-  UserCircle,
-} from 'lucide-react';
+import { SquaresFour, MapTrifold, FileText, Bell, UserCircle } from '@phosphor-icons/react';
 
 const sidebarLinks = [
-  { to: '/app', icon: LayoutDashboard, label: 'Início', end: true },
-  { to: '/app/mapa', icon: Map, label: 'Mapa', end: false },
+  { to: '/app', icon: SquaresFour, label: 'Início', end: true },
+  { to: '/app/mapa', icon: MapTrifold, label: 'Mapa', end: false },
   { to: '/app/minhas-denuncias', icon: FileText, label: 'Minhas Denúncias', end: false },
-  { to: '/app/historico', icon: History, label: 'Histórico', end: false },
   { to: '/app/notificacoes', icon: Bell, label: 'Notificações', end: false },
   { to: '/app/perfil', icon: UserCircle, label: 'Perfil', end: false },
 ];

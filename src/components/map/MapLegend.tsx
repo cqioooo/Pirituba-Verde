@@ -21,12 +21,12 @@ export function MapLegend({ className, showStatus = false }: MapLegendProps) {
         <p className="text-[10px] text-surface-400 mb-1.5">Tipo de resíduo</p>
         <div className="flex flex-wrap gap-x-3 gap-y-1">
           {categories.map(([key, label]) => (
-            <div key={key} className="flex items-center gap-1.5">
+            <div key={key} className="flex items-center gap-2">
               <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
+                className="w-2.5 h-2.5 rounded-sm shrink-0"
                 style={{ backgroundColor: WASTE_CATEGORY_COLORS[key] }}
               />
-              <span className="text-[11px] text-surface-600">{label}</span>
+              <span className="text-[11px] text-surface-700 font-medium">{label}</span>
             </div>
           ))}
         </div>

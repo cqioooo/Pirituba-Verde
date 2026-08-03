@@ -43,8 +43,10 @@ export type {
   ReportDraft,
   ProximityCheckResult,
   PerfilPublico,
+  CriticidadeClassificacao,
+  PointDetailState,
 } from './database';
-export { EMPTY_REPORT_DRAFT } from './database';
+export { EMPTY_REPORT_DRAFT, classificarCriticidade } from './database';
 
 // Presentation labels and colors
 export {
@@ -59,4 +61,7 @@ export {
   PIRITUBA_CENTER,
   DEFAULT_ZOOM,
   DETAIL_ZOOM,
+  CRITICIDADE_LABELS,
+  CRITICIDADE_COLORS,
+  STATUS_TRANSITIONS,
 } from './point';

@@ -5,3 +5,6 @@ export { Badge } from './Badge';
 export { Alert } from './Alert';
 export { Spinner } from './Spinner';
 export { BottomSheet } from './BottomSheet';
+export { Modal } from './Modal';
+export { Select } from './Select';
+export { Textarea } from './Textarea';

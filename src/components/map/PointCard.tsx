@@ -2,7 +2,7 @@ import type { PontoAutenticado } from '@/types';
 import { WASTE_CATEGORY_LABELS, WASTE_CATEGORY_COLORS, POINT_STATUS_LABELS, POINT_STATUS_VARIANTS } from '@/types';
 import { Badge } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { MapPin, RefreshCw, Users } from 'lucide-react';
+import { MapPin, Users, ArrowsClockwise } from '@phosphor-icons/react';
 
 interface PointCardProps {
   point: PontoAutenticado;
@@ -65,7 +65,7 @@ export function PointCard({ point, selected = false, compact = false, onClick }:
             )}
             {isReincident && (
               <span className="flex items-center gap-0.5 text-danger-500 font-medium">
-                <RefreshCw className="w-3 h-3" />
+                <ArrowsClockwise className="w-4 h-4" />
                 Recorrente
               </span>
             )}

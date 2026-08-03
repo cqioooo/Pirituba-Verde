@@ -15,7 +15,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePontosAutenticados } from '@/services/queries';
 import { PIRITUBA_CENTER, DEFAULT_ZOOM, DETAIL_ZOOM } from '@/types';
 import type { PontoAutenticado } from '@/types';
-import { Plus, List, X, Crosshair } from 'lucide-react';
+import { Plus, List, X, Crosshair } from '@phosphor-icons/react';
 
 /** Helper component to fly to a position on the map */
 function FlyTo({ position, zoom }: { position: [number, number]; zoom: number }) {
@@ -100,8 +100,8 @@ export function MapPage() {
           zoomControl={true}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
 
           {filteredPoints.map(point => (

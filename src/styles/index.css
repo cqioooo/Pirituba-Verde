@@ -2,31 +2,31 @@
 @import "leaflet/dist/leaflet.css";
 
 @theme {
-  /* ── Verde primário ── */
-  --color-primary-50: #F0FDF4;
-  --color-primary-100: #D8F3DC;
-  --color-primary-200: #B7E4C7;
-  --color-primary-300: #95D5B2;
-  --color-primary-400: #52B788;
-  --color-primary-500: #40916C;
-  --color-primary-600: #2D6A4F;
-  --color-primary-700: #1B4332;
-  --color-primary-800: #143328;
-  --color-primary-900: #0D1F17;
+  /* ── Verde Institucional ── */
+  --color-primary-50: #f4f8f1;
+  --color-primary-100: #e4eedc;
+  --color-primary-200: #c6d1bb;
+  --color-primary-300: #a5b597;
+  --color-primary-400: #8ea37b;
+  --color-primary-500: #5c7a47;
+  --color-primary-600: #2d5217;
+  --color-primary-700: #244214;
+  --color-primary-800: #1b330e;
+  --color-primary-900: #122408;
 
-  /* ── Neutros (Stone) ── */
-  --color-surface-50: #FAFAF9;
-  --color-surface-100: #F5F5F4;
-  --color-surface-200: #E7E5E4;
-  --color-surface-300: #D6D3D1;
-  --color-surface-400: #A8A29E;
-  --color-surface-500: #78716C;
-  --color-surface-600: #57534E;
-  --color-surface-700: #44403C;
-  --color-surface-800: #292524;
-  --color-surface-900: #1C1917;
+  /* ── Superfícies ── */
+  --color-surface-50: #fffbf7; /* Fundo quente claro */
+  --color-surface-100: #f3efe8;
+  --color-surface-200: #e6e1d8;
+  --color-surface-300: #d1cbbd;
+  --color-surface-400: #a8a293;
+  --color-surface-500: #7a7566;
+  --color-surface-600: #5c584d;
+  --color-surface-700: #423f36;
+  --color-surface-800: #292721;
+  --color-surface-900: #171512;
 
-  /* ── Semânticas ── */
+  /* ── Semânticas e Severidade ── */
   --color-danger-50: #FEF2F2;
   --color-danger-500: #DC2626;
   --color-danger-600: #B91C1C;
@@ -36,14 +36,27 @@
   --color-info-500: #2563EB;
   --color-success-50: #F0FDF4;
   --color-success-500: #16A34A;
+  
+  --color-severity-low: #8ea37b;
+  --color-severity-medium: #b08b3c;
+  --color-severity-high: #b65a2b;
+  --color-severity-critical: #8b2e2e;
+
+  /* ── Dataviz ── */
+  --color-chart-1: #244214;
+  --color-chart-2: #2d5217;
+  --color-chart-3: #5c7a47;
+  --color-chart-4: #8ea37b;
+  --color-chart-5: #c6d1bb;
 
   /* ── Tipografia ── */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Satoshi', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
 
-  /* ── Sombras ── */
-  --shadow-card: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.06);
-  --shadow-elevated: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.07);
-  --shadow-modal: 0 10px 25px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+  /* ── Sombras (Sutis) ── */
+  --shadow-card: 0 2px 8px -2px rgba(36, 66, 20, 0.05), 0 1px 3px -1px rgba(36, 66, 20, 0.03);
+  --shadow-elevated: 0 8px 24px -4px rgba(36, 66, 20, 0.06), 0 4px 8px -2px rgba(36, 66, 20, 0.04);
+  --shadow-modal: 0 16px 32px -8px rgba(36, 66, 20, 0.1), 0 8px 16px -4px rgba(36, 66, 20, 0.06);
 }
 
 /* ── Reset & Global ── */

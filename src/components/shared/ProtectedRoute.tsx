@@ -1,14 +1,20 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
+import { usePerfilUsuario } from '@/services/queries';
 import { Spinner } from '@/components/ui';
+import type { PerfilTipo } from '@/types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requiredRoles?: PerfilTipo[];
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps) {
+  const { user, loading: authLoading } = useAuth();
   const location = useLocation();
+  const { data: perfil, isLoading: perfilLoading } = usePerfilUsuario(user?.id);
+
+  const loading = authLoading || (user && perfilLoading);
 
   if (loading) {
     return (
@@ -23,6 +29,22 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (requiredRoles && requiredRoles.length > 0) {
+    // Permite bypass temporário em desenvolvimento local para facilitar testes
+    if (import.meta.env.DEV) {
+      console.warn('[Pirituba Verde] Bypass de roles ativado em ambiente de desenvolvimento.');
+      return <>{children}</>;
+    }
+
+    if (!perfil) {
+      return <Navigate to="/app" replace />;
+    }
+    if (!requiredRoles.includes(perfil.perfil)) {
+      // Se não for gestor/analista/admin, manda pro app do cidadão
+      return <Navigate to="/app" replace />;
+    }
   }
 
   return <>{children}</>;

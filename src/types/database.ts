@@ -55,6 +55,8 @@ export type CamadaTipo =
   | 'area_risco'
   | 'distrito';
 
+export type CriticidadeClassificacao = 'baixa' | 'media' | 'alta' | 'critica';
+
 // ═══════════════════════════════════════════════
 // Interfaces das Views (o que o frontend consome)
 // ═══════════════════════════════════════════════
@@ -386,3 +388,23 @@ export const EMPTY_REPORT_DRAFT: ReportDraft = {
   photos: [],
   uploadedUrls: [],
 };
+
+// ═══════════════════════════════════════════════
+// UI States (Gestão)
+// ═══════════════════════════════════════════════
+
+export interface PointDetailState {
+  isChangingStatus: boolean;
+  statusModalOpen: boolean;
+  targetStatus: StatusPonto | null;
+  statusReason: string;
+}
+
+export function classificarCriticidade(valor: number | null | undefined): CriticidadeClassificacao {
+  if (!valor) return 'baixa';
+  if (valor >= 75) return 'critica';
+  if (valor >= 50) return 'alta';
+  if (valor >= 25) return 'media';
+  return 'baixa';
+}
+

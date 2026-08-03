@@ -1,4 +1,4 @@
-import { Shield, TrendingDown, Brain, Users } from 'lucide-react';
+import { Shield, TrendDown, Brain, Users } from '@phosphor-icons/react';
 
 const benefits = [
   {
@@ -8,7 +8,7 @@ const benefits = [
       'Informações acessíveis sobre pontos de descarte irregular, promovendo visibilidade e cobrança legítima.',
   },
   {
-    icon: TrendingDown,
+    icon: TrendDown,
     title: 'Prevenção territorial',
     description:
       'Dados de recorrência ajudam a identificar padrões e prevenir a formação de novos pontos viciados.',
@@ -29,38 +29,41 @@ const benefits = [
 
 export function Benefits() {
   return (
-    <section className="py-16 sm:py-20 bg-surface-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-surface-900">
-            Por que o Pirituba Verde existe
+    <section className="py-24 sm:py-32 bg-surface-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div className="text-center mb-20">
+          <h2 className="font-heading text-4xl sm:text-5xl font-bold text-surface-900 leading-tight">
+            Por que o Pirituba Verde existe?
           </h2>
-          <p className="mt-3 text-surface-500 max-w-lg mx-auto">
-            Uma resposta cidadã a um problema urbano recorrente, com foco em
-            dados, prevenção e participação.
+          <p className="mt-6 text-surface-600 text-xl leading-relaxed max-w-2xl mx-auto">
+            Uma resposta cidadã a um problema urbano recorrente, com foco em dados, prevenção e participação coletiva.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {benefits.map((benefit) => (
-            <div
-              key={benefit.title}
-              className="flex gap-4 p-5 rounded-xl bg-white border border-surface-200 hover:border-primary-200 hover:shadow-card transition-all"
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          {benefits.map((benefit, index) => (
+            <div 
+              key={benefit.title} 
+              className={`flex flex-col gap-8 p-10 sm:p-12 rounded-[40px] bg-white hover:-translate-y-1 transition-transform duration-500 ${
+                index === 0 || index === 3 ? 'lg:col-span-2' : 'lg:col-span-1'
+              }`}
             >
-              <div className="shrink-0 w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center text-primary-600">
-                <benefit.icon className="w-5 h-5" />
+              <div className="w-16 h-16 rounded-2xl bg-surface-50 flex items-center justify-center text-primary-700">
+                <benefit.icon className="w-8 h-8" strokeWidth={1.5} />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-surface-900 mb-1">
+                <h3 className="font-heading text-2xl font-bold text-surface-900 mb-4">
                   {benefit.title}
                 </h3>
-                <p className="text-sm text-surface-500 leading-relaxed">
+                <p className="text-surface-600 text-lg leading-relaxed">
                   {benefit.description}
                 </p>
               </div>
             </div>
           ))}
         </div>
+        
       </div>
     </section>
   );

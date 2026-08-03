@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import type { ProximityCheckResult } from '@/types';
 import { useProximityCheck } from '@/hooks/useProximityCheck';
 import { Spinner, Badge } from '@/components/ui';
-import { CheckCircle, AlertCircle, MapPin } from 'lucide-react';
+import { CheckCircle, WarningCircle, MapPin } from '@phosphor-icons/react';
 import { WASTE_CATEGORY_COLORS, WASTE_CATEGORY_LABELS, POINT_STATUS_LABELS, POINT_STATUS_VARIANTS } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -127,7 +127,7 @@ export function ProximityStep({
     return (
       <div className="space-y-4">
         <div className="flex items-start gap-3 bg-warning-50 border border-warning-500/20 rounded-xl p-4">
-          <AlertCircle className="w-5 h-5 text-warning-500 shrink-0 mt-0.5" />
+          <WarningCircle className="w-5 h-5 text-warning-500 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-surface-800">
               Existe um registro próximo

@@ -1,7 +1,7 @@
 import { useAuth } from '@/providers/AuthProvider';
 import { useConfirmarPonto, useVerificarConfirmacao } from '@/services/queries';
 import { Button } from '@/components/ui';
-import { CheckCircle2, ThumbsUp } from 'lucide-react';
+import { CheckCircle, ThumbsUp } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 interface ConfirmButtonProps {
@@ -24,7 +24,7 @@ export function ConfirmButton({ pontoId, onSuccess }: ConfirmButtonProps) {
   if (jaConfirmou || justConfirmed) {
     return (
       <div className="flex items-center justify-center gap-2 p-2.5 bg-success-50 text-success-700 rounded-lg border border-success-200">
-        <CheckCircle2 className="w-4 h-4" />
+        <CheckCircle className="w-4 h-4" />
         <span className="text-sm font-medium">Você já confirmou este ponto</span>
       </div>
     );

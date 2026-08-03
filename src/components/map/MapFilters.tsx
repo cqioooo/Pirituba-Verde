@@ -2,7 +2,7 @@ import { WASTE_CATEGORY_LABELS, WASTE_CATEGORY_COLORS, POINT_STATUS_LABELS, POIN
 import type { StatusPonto, MapFilterState } from '@/types';
 import { Badge } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { X, SlidersHorizontal } from 'lucide-react';
+import { X, Faders } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 const categories = Object.entries(WASTE_CATEGORY_LABELS);
@@ -42,7 +42,7 @@ export function MapFilters({
             : 'text-surface-600 hover:text-surface-900'
         )}
       >
-        <SlidersHorizontal className="w-3.5 h-3.5" />
+        <Faders className="w-4 h-4" />
         <span>Filtros</span>
         {hasActiveFilters && (
           <span className="ml-auto text-[10px] bg-primary-600 text-white px-1.5 py-0.5 rounded-full">

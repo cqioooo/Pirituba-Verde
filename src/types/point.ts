@@ -101,3 +101,35 @@ export const TIME_LABELS: Record<string, string> = {
 export const PIRITUBA_CENTER: [number, number] = [-23.485, -46.719];
 export const DEFAULT_ZOOM = 14;
 export const DETAIL_ZOOM = 17;
+
+// ── Criticidade ──
+
+import type { CriticidadeClassificacao } from './database';
+
+export const CRITICIDADE_LABELS: Record<CriticidadeClassificacao, string> = {
+  baixa: 'Baixa',
+  media: 'Média',
+  alta: 'Alta',
+  critica: 'Crítica',
+};
+
+export const CRITICIDADE_COLORS: Record<CriticidadeClassificacao, 'neutral' | 'info' | 'warning' | 'danger'> = {
+  baixa: 'neutral',
+  media: 'info',
+  alta: 'warning',
+  critica: 'danger',
+};
+
+// ── Transições de Status Permitidas ──
+
+export const STATUS_TRANSITIONS: Record<StatusPonto, StatusPonto[]> = {
+  novo: ['em_confirmacao', 'confirmado', 'invalido', 'cancelado'],
+  em_confirmacao: ['confirmado', 'invalido', 'cancelado'],
+  confirmado: ['em_analise', 'encaminhado', 'resolvido', 'arquivado'],
+  em_analise: ['encaminhado', 'resolvido', 'arquivado'],
+  encaminhado: ['resolvido', 'arquivado'],
+  resolvido: ['arquivado', 'novo'], // Pode voltar a ser novo se for recorrente
+  invalido: ['arquivado'],
+  cancelado: ['arquivado'],
+  arquivado: [],
+};

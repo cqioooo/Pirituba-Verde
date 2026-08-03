@@ -8,7 +8,7 @@ import { FormStep } from '@/features/report/steps/FormStep';
 import { ReviewStep } from '@/features/report/steps/ReviewStep';
 import { EMPTY_REPORT_DRAFT } from '@/types';
 import type { ReportDraft, ProximityCheckResult } from '@/types';
-import { CheckCircle, ArrowLeft, Home, ShieldAlert } from 'lucide-react';
+import { CheckCircle, ArrowLeft, House, ShieldWarning } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRateLimit, useEnviarOcorrencia, usePontoAutenticado } from '@/services/queries';
@@ -156,7 +156,7 @@ export function NewReportPage() {
       <div className="max-w-lg mx-auto py-10">
         <Card className="text-center py-10 px-6">
           <div className="w-16 h-16 mx-auto bg-warning-50 rounded-2xl flex items-center justify-center mb-4">
-            <ShieldAlert className="w-8 h-8 text-warning-500" />
+            <ShieldWarning className="w-8 h-8 text-warning-500" />
           </div>
           <h2 className="text-xl font-bold text-surface-900 mb-2">Limite diário atingido</h2>
           <p className="text-sm text-surface-600 mb-6 leading-relaxed">
@@ -165,7 +165,7 @@ export function NewReportPage() {
             Por favor, tente novamente amanhã.
           </p>
           <Link to="/app">
-            <Button size="sm" fullWidth icon={<Home className="w-4 h-4" />}>
+            <Button size="sm" fullWidth icon={<House className="w-4 h-4" />}>
               Voltar ao início
             </Button>
           </Link>
@@ -197,7 +197,7 @@ export function NewReportPage() {
               </Button>
             </Link>
             <Link to="/app/minhas-denuncias">
-              <Button variant="secondary" size="sm" icon={<Home className="w-4 h-4" />}>
+              <Button variant="secondary" size="sm" icon={<House className="w-4 h-4" />}>
                 Ver minhas denúncias
               </Button>
             </Link>

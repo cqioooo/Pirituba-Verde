@@ -8,7 +8,7 @@ import {
   TIME_LABELS,
   VOLUME_LABELS,
 } from '@/types';
-import { MapPin, Tag, Clock, Ruler, FileText, CheckCircle, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Tag, Clock, Ruler, FileText, CheckCircle, Image as ImageIcon } from '@phosphor-icons/react';
 
 const pinIcon = L.divIcon({
   className: 'pv-marker',
@@ -80,7 +80,10 @@ export function ReviewStep({ draft, isConfirmation }: ReviewStepProps) {
           scrollWheelZoom={false}
           doubleClickZoom={false}
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer 
+            attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" 
+          />
           <Marker position={[draft.latitude, draft.longitude]} icon={pinIcon} />
         </MapContainer>
       </div>
