@@ -90,10 +90,10 @@ export function Dashboard() {
             <ChartLineUp className="w-5 h-5" weight="duotone" />
           </div>
           <p className="text-3xl font-bold text-primary-900 font-mono tracking-tighter">{minhasOcorrencias.length}</p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 mt-1">
             <p className="text-[11px] sm:text-xs font-semibold text-primary-700 uppercase tracking-wider">Meu Impacto</p>
             {pendentesCount > 0 && (
-              <Badge variant="warning" className="text-[10px] py-0">{pendentesCount} em análise</Badge>
+              <Badge variant="warning" className="text-[10px] py-0  ">{pendentesCount} em análise</Badge>
             )}
           </div>
         </div>

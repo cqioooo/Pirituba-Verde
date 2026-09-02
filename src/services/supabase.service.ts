@@ -17,6 +17,8 @@ import type {
   ConfiguracaoSistema,
   ConfiguracoesParseadas,
   HistoricoStatusPonto,
+  HistoricoStatusPontoCidadao,
+  DetalheDenuncia,
   Notificacao,
   Perfil,
   PontoGestor,
@@ -178,11 +180,83 @@ export async function fetchOcorrenciasUsuario(userId: string): Promise<Ocorrenci
   assertConfigured();
   const { data, error } = await supabase
     .from('ocorrencias')
-    .select('*')
+    .select(`
+      *,
+      pontos_descarte!left(
+        endereco,
+        bairro,
+        status
+      )
+    `)
     .eq('registrado_por', userId)
-    .order('created_at', { ascending: false });
+    .order('data_registro', { ascending: false })
+    .limit(50);
   if (error) throw error;
   return (data ?? []) as Ocorrencia[];
+}
+
+/**
+ * Busca o detalhe completo de uma única denúncia do cidadão.
+ *
+ * Segurança: filtro duplo obrigatório — id da ocorrência E registrado_por.
+ * Isso garante que um UUID inserido manualmente na URL nunca retorne
+ * dados de outro usuário.
+ */
+export async function fetchDetalheDenuncia(
+  ocorrenciaId: string,
+  usuarioId: string
+): Promise<DetalheDenuncia> {
+  assertConfigured();
+
+  const { data: ocorrencia, error: ocorrenciaError } = await supabase
+    .from('ocorrencias')
+    .select(`
+      id,
+      ponto_id,
+      data_registro,
+      descricao,
+      fotos,
+      foto_url,
+      tipo_residuo,
+      volume_estimado,
+      frequencia_percebida,
+      horario_percebido,
+      status,
+      tipo,
+      pontos_descarte!left(
+        id,
+        endereco,
+        bairro,
+        subprefeitura,
+        status,
+        confirmacoes,
+        criticidade
+      )
+    `)
+    .eq('id', ocorrenciaId)
+    .eq('registrado_por', usuarioId)
+    .eq('tipo', 'denuncia')
+    .single();
+
+  if (ocorrenciaError) throw ocorrenciaError;
+
+  // Buscar histórico do ponto, sem expor alterado_por ao cidadão
+  let historico: HistoricoStatusPontoCidadao[] = [];
+  if (ocorrencia?.ponto_id) {
+    const { data: hist, error: histError } = await supabase
+      .from('historico_status_ponto')
+      .select('id, status_anterior, status_novo, motivo, created_at')
+      .eq('ponto_id', ocorrencia.ponto_id)
+      .order('created_at', { ascending: false });
+
+    if (histError) throw histError;
+    historico = (hist ?? []) as HistoricoStatusPontoCidadao[];
+  }
+
+  return {
+    ...(ocorrencia as unknown as Omit<DetalheDenuncia, 'historico'>),
+    historico,
+  };
 }
 
 // ── Confirmações ──

@@ -13,6 +13,7 @@ import {
   inserirModeracao,
   uploadFoto,
   fetchOcorrenciasUsuario,
+  fetchDetalheDenuncia,
   fetchNotificacoes,
   fetchPerfilUsuario,
   fetchDashboardResumo,
@@ -26,7 +27,19 @@ import {
   rejectModeracao,
   fetchIndicadoresDiarios,
 } from './supabase.service';
-import type { OcorrenciaInsert, ConfirmacaoInsert, StatusPonto, PontoGestor } from '@/types';
+import {
+  getScenarioSummary,
+  getOperationalAlerts,
+  getPriorityRanking,
+  getChartDrilldownData,
+} from './operational.service';
+import {
+  getActionableRanking,
+  getActionableInsights,
+  getContextResults,
+} from './actionable.service';
+import type { OcorrenciaInsert, ConfirmacaoInsert, StatusPonto, PontoGestor, DetalheDenuncia } from '@/types';
+import type { ActionableTarget } from '@/types/operational';
 import { isSupabaseConfigured } from '@/integrations/supabase/client';
 
 const STALE_TIME_DEFAULT = 1000 * 60 * 5; // 5 minutos
@@ -146,6 +159,26 @@ export function useOcorrenciasUsuario(userId?: string) {
     queryFn: () => fetchOcorrenciasUsuario(userId!),
     enabled: !!userId,
     staleTime: STALE_TIME_DEFAULT,
+  });
+}
+
+// ── Detalhe de Denúncia (Cidadão) ──
+
+export function useDetalheDenuncia(id?: string, userId?: string) {
+  const enabled = Boolean(id && userId);
+  if (!isSupabaseConfigured) {
+    return useQueryFallback<DetalheDenuncia | null>(
+      ['detalhe-denuncia', id, userId],
+      null,
+      enabled
+    );
+  }
+  return useQuery({
+    queryKey: ['detalhe-denuncia', id, userId],
+    queryFn: () => fetchDetalheDenuncia(id!, userId!),
+    enabled,
+    staleTime: STALE_TIME_DEFAULT,
+    retry: false,
   });
 }
 
@@ -541,4 +574,81 @@ export function useRejectModeracao() {
     },
   });
 }
+
+// ═══════════════════════════════════════════════
+// HOOKS DA INTELIGÊNCIA OPERACIONAL & ACIONÁVEL
+// ═══════════════════════════════════════════════
+
+export function useScenarioSummary(periodo: string) {
+  if (!isSupabaseConfigured) return useQueryFallback(['scenario-summary', periodo], {
+    title: 'Resumo do período',
+    headline: 'Dados mock — Supabase não configurado.',
+  });
+  return useQuery({
+    queryKey: ['scenario-summary', periodo],
+    queryFn: () => getScenarioSummary(periodo),
+    staleTime: STALE_TIME_DEFAULT,
+  });
+}
+
+export function useOperationalAlerts(periodo: string) {
+  if (!isSupabaseConfigured) return useQueryFallback(['operational-alerts', periodo], []);
+  return useQuery({
+    queryKey: ['operational-alerts', periodo],
+    queryFn: () => getOperationalAlerts(periodo),
+    staleTime: STALE_TIME_DEFAULT,
+  });
+}
+
+export function usePriorityRanking(periodo: string) {
+  if (!isSupabaseConfigured) return useQueryFallback(['priority-ranking', periodo], []);
+  return useQuery({
+    queryKey: ['priority-ranking', periodo],
+    queryFn: () => getPriorityRanking(periodo),
+    staleTime: STALE_TIME_DEFAULT,
+  });
+}
+
+export function useChartDrilldownData(sourceChart: string, filterValue: string, enabled: boolean) {
+  if (!isSupabaseConfigured) return useQueryFallback(['chart-drilldown', sourceChart, filterValue], {
+    title: '', subtitle: '', total: 0, items: [],
+  });
+  return useQuery({
+    queryKey: ['chart-drilldown', sourceChart, filterValue],
+    queryFn: () => getChartDrilldownData(sourceChart, filterValue),
+    enabled,
+    staleTime: STALE_TIME_DEFAULT,
+  });
+}
+
+export function useActionableRanking(periodo: string) {
+  if (!isSupabaseConfigured) return useQueryFallback(['actionable-ranking', periodo], []);
+  return useQuery({
+    queryKey: ['actionable-ranking', periodo],
+    queryFn: () => getActionableRanking(periodo),
+    staleTime: STALE_TIME_DEFAULT,
+  });
+}
+
+export function useActionableInsights(periodo: string) {
+  if (!isSupabaseConfigured) return useQueryFallback(['actionable-insights', periodo], []);
+  return useQuery({
+    queryKey: ['actionable-insights', periodo],
+    queryFn: () => getActionableInsights(periodo),
+    staleTime: STALE_TIME_DEFAULT,
+  });
+}
+
+export function useContextResults(target: ActionableTarget | null) {
+  if (!isSupabaseConfigured) return useQueryFallback(['context-results', target], {
+    title: '', subtitle: '', total: 0, items: [],
+  });
+  return useQuery({
+    queryKey: ['context-results', target],
+    queryFn: () => getContextResults(target!),
+    enabled: !!target,
+    staleTime: STALE_TIME_DEFAULT,
+  });
+}
+
 

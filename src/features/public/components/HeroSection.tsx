@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui';
 import { MapPin, ArrowRight } from '@phosphor-icons/react';
+import heroImage from '@/assets/images/vista-do-pico-do-jaragua.jpg';
 
 export function HeroSection() {
   return (
@@ -39,12 +40,13 @@ export function HeroSection() {
           <div className="flex-1 w-full relative">
             <div className="aspect-square w-full max-w-[600px] mx-auto lg:ml-auto relative">
               {/* Organic Shape Placeholder */}
-              <div className="absolute inset-0 bg-primary-200 rounded-[60px] rounded-bl-[120px] rounded-tr-[120px] overflow-hidden transform -rotate-3 transition-transform hover:rotate-0 duration-700">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary-600/20 to-transparent mix-blend-overlay"></div>
-                {/* Aqui entrará a imagem real ambiental futuramente */}
-                <div className="w-full h-full bg-primary-100 flex items-center justify-center">
-                  <span className="text-primary-600/50 font-heading text-2xl font-bold">Natureza & Cidade</span>
-                </div>
+              <div className="absolute inset-0 bg-primary-200 rounded-[40px] rounded-bl-[100px] rounded-tr-[100px] overflow-hidden transform -rotate-3 transition-transform hover:rotate-0 duration-700 shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary-900/20 to-transparent mix-blend-overlay z-10 pointer-events-none"></div>
+                <img
+                  src={heroImage}
+                  alt="Vista do Pico do Jaraguá - Pirituba Verde"
+                  className="w-full h-full object-cover"
+                />
               </div>
               
               {/* Floating element */}

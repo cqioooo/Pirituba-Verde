@@ -3,6 +3,7 @@ import { WASTE_CATEGORY_LABELS, WASTE_CATEGORY_COLORS, POINT_STATUS_LABELS, POIN
 import { Badge } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { MapPin, Users, ArrowsClockwise } from '@phosphor-icons/react';
+import { useLocation } from 'react-router-dom';
 
 interface PointCardProps {
   point: PontoAutenticado;
@@ -12,8 +13,11 @@ interface PointCardProps {
 }
 
 export function PointCard({ point, selected = false, compact = false, onClick }: PointCardProps) {
-  const isReincident = point.recorrente;
-  const isHighSeverity = (point.criticidade || 0) >= 7.5;
+  const location = useLocation();
+  const isGestorArea = location.pathname.startsWith('/gestao');
+
+  const isReincident = isGestorArea && point.recorrente;
+  const isHighSeverity = isGestorArea && (point.criticidade || 0) >= 7.5;
   const categoria = point.categoria_principal || 'misto';
   const color = WASTE_CATEGORY_COLORS[categoria] || WASTE_CATEGORY_COLORS.misto;
   const label = WASTE_CATEGORY_LABELS[categoria] || 'Misto';

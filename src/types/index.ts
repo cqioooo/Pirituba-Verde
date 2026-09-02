@@ -45,6 +45,8 @@ export type {
   PerfilPublico,
   CriticidadeClassificacao,
   PointDetailState,
+  HistoricoStatusPontoCidadao,
+  DetalheDenuncia,
 } from './database';
 export { EMPTY_REPORT_DRAFT, classificarCriticidade } from './database';
 

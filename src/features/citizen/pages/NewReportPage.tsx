@@ -115,7 +115,7 @@ export function NewReportPage() {
             ponto_id: draft.confirmingPointId || undefined,
             tipo: draft.confirmingPointId ? 'confirmacao' : 'denuncia',
             status: draft.proximityResult?.scenario === 'faixa_cinzenta' ? 'em_revisao' : 'pendente',
-            tipo_residuo: draft.categoria_principal,
+            tipo_residuo: draft.categoria_principal ? [draft.categoria_principal] : undefined,
             volume_estimado: draft.volume_estimado || undefined,
             frequencia_percebida: draft.frequencia_percebida || undefined,
             horario_percebido: draft.horario_percebido || undefined,

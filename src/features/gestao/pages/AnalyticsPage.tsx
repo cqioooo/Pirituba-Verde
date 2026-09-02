@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { ChartLineUp } from '@phosphor-icons/react';
 
 import type { AnalyticsFilters } from '@/types/analytics';
@@ -29,7 +29,7 @@ import {
   useMonthlyAnalysis
 } from '@/services/analytics.queries';
 
-import { getChartDrilldownData } from '@/services/operational.service';
+import { useChartDrilldownData } from '@/services/queries';
 
 const DRILLDOWN_CLOSED: DrilldownState = {
   isOpen: false,
@@ -61,11 +61,12 @@ export function AnalyticsPage() {
   const { data: timeRange, isLoading: loadingTimeRange } = useTimeRangeAnalysis(filters);
   const { data: monthly, isLoading: loadingMonthly } = useMonthlyAnalysis(filters);
 
-  // Drilldown data (charts)
-  const drilldownData = useMemo(() => {
-    if (!drilldown.isOpen) return null;
-    return getChartDrilldownData(drilldown.sourceChart, drilldown.filterValue);
-  }, [drilldown]);
+  // Drilldown data (now async via hook)
+  const { data: drilldownData } = useChartDrilldownData(
+    drilldown.sourceChart,
+    drilldown.filterValue,
+    drilldown.isOpen
+  );
 
   // ── Handlers ──
   const openDrilldown = (sourceChart: string, filterKey: string, filterValue: string, title: string) => {
@@ -120,7 +121,7 @@ export function AnalyticsPage() {
       {/* Drawers */}
       <AnalyticsDrilldownPanel
         state={drilldown}
-        data={drilldownData}
+        data={drilldownData || null}
         onClose={closeDrilldown}
       />
     </div>

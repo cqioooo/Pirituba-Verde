@@ -159,7 +159,7 @@ export interface Ocorrencia {
   registrado_por: string;
   fonte: string | null;
   created_at: string;
-  tipo_residuo: string | null;
+  tipo_residuo: string | string[] | null;
   volume_estimado: string | null;
   frequencia_percebida: string | null;
   horario_percebido: string | null;
@@ -172,7 +172,7 @@ export interface Ocorrencia {
   updated_at: string;
   categoria_principal: string | null;
   observacoes_revisao?: string | null;
-  pontos_descarte?: { endereco: string | null } | null;
+  pontos_descarte?: { endereco: string | null; bairro: string | null; status: StatusPonto } | null;
 }
 
 /** Payload para inserir nova ocorrência */
@@ -182,7 +182,7 @@ export interface OcorrenciaInsert {
   registrado_por: string;
   fonte?: string;
   categoria_principal?: string;
-  tipo_residuo?: string;
+  tipo_residuo?: string | string[];
   volume_estimado?: string;
   frequencia_percebida?: string;
   horario_percebido?: string;
@@ -258,6 +258,45 @@ export interface HistoricoStatusPonto {
   alterado_por: string | null;
   motivo: string | null;
   created_at: string;
+}
+
+/**
+ * Histórico de status do ponto para visualização do cidadão.
+ * Propositalmente omite `alterado_por` — o cidadão não deve saber quem
+ * alterou o status do ponto.
+ */
+export interface HistoricoStatusPontoCidadao {
+  id: string;
+  status_anterior: string | null;
+  status_novo: string;
+  motivo: string | null;
+  created_at: string;
+}
+
+/** Dados completos de uma denúncia do cidadão, incluindo ponto e histórico. */
+export interface DetalheDenuncia {
+  id: string;
+  ponto_id: string | null;
+  data_registro: string;
+  descricao: string | null;
+  fotos: string[] | null;
+  foto_url: string | null;
+  tipo_residuo: string | string[] | null;
+  volume_estimado: string | null;
+  frequencia_percebida: string | null;
+  horario_percebido: string | null;
+  status: StatusOcorrencia;
+  tipo: TipoOcorrencia;
+  pontos_descarte: {
+    id: string;
+    endereco: string | null;
+    bairro: string | null;
+    subprefeitura: string | null;
+    status: StatusPonto;
+    confirmacoes: number;
+    criticidade: number | null;
+  } | null;
+  historico: HistoricoStatusPontoCidadao[];
 }
 
 export interface ModeracaoOcorrencia {

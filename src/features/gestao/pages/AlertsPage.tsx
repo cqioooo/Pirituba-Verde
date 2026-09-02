@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { WarningCircle } from '@phosphor-icons/react';
 
 import type { AnalyticsFilters } from '@/types/analytics';
 import { AnalyticsFiltersBar } from '../components/analytics/AnalyticsFiltersBar';
 import { OperationalAlertsPanel } from '../components/operational/OperationalAlertsPanel';
+import { Spinner } from '@/components/ui';
 
-import { getOperationalAlerts } from '@/services/operational.service';
+import { useOperationalAlerts } from '@/services/queries';
 
 export function AlertsPage() {
   const [filters, setFilters] = useState<AnalyticsFilters>({
@@ -17,8 +18,8 @@ export function AlertsPage() {
     criticidade: []
   });
 
-  // Fetch alerts based on period filter
-  const alerts = useMemo(() => getOperationalAlerts(filters.periodo), [filters.periodo]);
+  // Fetch alerts from real data
+  const { data: alerts = [], isLoading } = useOperationalAlerts(filters.periodo);
 
   return (
     <div className="space-y-6">
@@ -40,7 +41,13 @@ export function AlertsPage() {
 
       {/* Painel de Alertas */}
       <div className="w-full">
-        <OperationalAlertsPanel alerts={alerts} />
+        {isLoading ? (
+          <div className="flex justify-center p-12">
+            <Spinner size="lg" />
+          </div>
+        ) : (
+          <OperationalAlertsPanel alerts={alerts} />
+        )}
       </div>
     </div>
   );

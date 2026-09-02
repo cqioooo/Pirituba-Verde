@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 import type { AnalyticsFilters } from '@/types/analytics';
 import type { ActionableTarget, ActionableItem as ActionableItemType, InsightItem } from '@/types/operational';
@@ -20,15 +20,12 @@ import {
 } from '@/services/analytics.queries';
 
 import {
-  getScenarioSummary,
-  getPriorityRanking,
-} from '@/services/operational.service';
-
-import {
-  getActionableRanking,
-  getActionableInsights,
-  getContextResults,
-} from '@/services/actionable.service';
+  useScenarioSummary,
+  usePriorityRanking,
+  useActionableRanking,
+  useActionableInsights,
+  useContextResults,
+} from '@/services/queries';
 
 export function OverviewPage() {
   
@@ -48,19 +45,16 @@ export function OverviewPage() {
   const { data: kpiData, isLoading: loadingKpis } = useAnalyticsKpis(filters);
   const { data: timeSeries, isLoading: loadingTs } = useNewPointsTimeSeries(filters);
 
-  // Operational intelligence
-  const scenario = useMemo(() => getScenarioSummary(filters.periodo), [filters.periodo]);
-  const ranking = useMemo(() => getPriorityRanking(filters.periodo), [filters.periodo]);
+  // Operational intelligence (now async hooks)
+  const { data: scenario } = useScenarioSummary(filters.periodo);
+  const { data: ranking } = usePriorityRanking(filters.periodo);
 
-  // Actionable layer
-  const actionableItems = useMemo(() => getActionableRanking(filters.periodo), [filters.periodo]);
-  const insights = useMemo(() => getActionableInsights(filters.periodo), [filters.periodo]);
+  // Actionable layer (now async hooks)
+  const { data: actionableItems } = useActionableRanking(filters.periodo);
+  const { data: insights } = useActionableInsights(filters.periodo);
 
   // Context result data (actionable)
-  const contextData = useMemo(() => {
-    if (!contextTarget) return null;
-    return getContextResults(contextTarget);
-  }, [contextTarget]);
+  const { data: contextData } = useContextResults(contextTarget);
 
   // ── Handlers ──
   const openContext = useCallback((target: ActionableTarget) => {
@@ -107,7 +101,7 @@ export function OverviewPage() {
           {/* Insights (Flat List) */}
           <div className="lg:col-span-1">
             <h3 className="font-semibold text-surface-900 text-sm uppercase tracking-wider mb-6 border-b border-surface-200 pb-2">Inteligência Tática</h3>
-            <InsightsPanel insights={insights} onInsightClick={handleInsightClick} />
+            <InsightsPanel insights={insights || []} onInsightClick={handleInsightClick} />
           </div>
         </div>
       </section>
@@ -116,11 +110,11 @@ export function OverviewPage() {
       <section className="px-8 py-8 flex-1 bg-surface-50/30">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
           <div className="xl:col-span-1 flex flex-col gap-12">
-            <ScenarioSummaryCard data={scenario} />
-            <ActionableRankingList items={actionableItems} onItemClick={handleActionableClick} />
+            <ScenarioSummaryCard data={scenario || { title: '', headline: '' }} />
+            <ActionableRankingList items={actionableItems || []} onItemClick={handleActionableClick} />
           </div>
           <div className="xl:col-span-2">
-            <PriorityRankingCard items={ranking} onItemClick={(item) => {
+            <PriorityRankingCard items={ranking || []} onItemClick={(item) => {
               openContext({ type: 'point', pointId: item.id, title: `Detalhe: ${item.label}` });
             }} />
           </div>
@@ -131,7 +125,7 @@ export function OverviewPage() {
       <ContextResultPanel
         isOpen={!!contextTarget}
         target={contextTarget}
-        data={contextData}
+        data={contextData || null}
         onClose={closeContext}
       />
     </div>

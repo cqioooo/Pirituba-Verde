@@ -102,7 +102,7 @@ export function BottomSheet({
       {/* Overlay */}
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/20 transition-opacity',
+          'fixed inset-0 z-[5900] bg-black/20 transition-opacity',
           open ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
         onClick={onClose}
@@ -116,7 +116,7 @@ export function BottomSheet({
         aria-modal="true"
         aria-label={title ?? 'Painel de detalhes'}
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-modal',
+          'fixed bottom-0 left-0 right-0 z-[6000] bg-white rounded-t-2xl shadow-modal',
           !isDragging && 'transition-[height] duration-300 ease-out'
         )}
         style={{ height: `${height}vh` }}

@@ -2,9 +2,10 @@ import type { PontoAutenticado } from '@/types';
 import { WASTE_CATEGORY_LABELS, WASTE_CATEGORY_COLORS, POINT_STATUS_LABELS, POINT_STATUS_VARIANTS } from '@/types';
 import { Badge, Button } from '@/components/ui';
 import { MapPin, Calendar, Users, Warning, CaretRight, ArrowsClockwise } from '@phosphor-icons/react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useHistoricoPonto } from '@/services/queries';
 import { ConfirmButton } from './ConfirmButton';
+import { cn } from '@/lib/utils';
 
 interface PointDetailProps {
   point: PontoAutenticado;
@@ -30,6 +31,9 @@ function eventIcon(type: string) {
 }
 
 export function PointDetail({ point }: PointDetailProps) {
+  const location = useLocation();
+  const isGestorArea = location.pathname.startsWith('/gestao');
+
   const { data: events = [] } = useHistoricoPonto(point.id);
   
   const categoria = point.categoria_principal || 'misto';
@@ -67,15 +71,17 @@ export function PointDetail({ point }: PointDetailProps) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className={cn("grid gap-3", isGestorArea ? "grid-cols-3" : "grid-cols-2")}>
         <div className="bg-surface-50 rounded-lg p-2.5 text-center">
           <p className="text-lg font-bold text-surface-800">{point.confirmacoes}</p>
           <p className="text-[10px] text-surface-500">Confirmações</p>
         </div>
-        <div className="bg-surface-50 rounded-lg p-2.5 text-center">
-          <p className="text-lg font-bold text-surface-800">{point.criticidade ? point.criticidade.toFixed(1) : '-'}</p>
-          <p className="text-[10px] text-surface-500">Criticidade</p>
-        </div>
+        {isGestorArea && (
+          <div className="bg-surface-50 rounded-lg p-2.5 text-center">
+            <p className="text-lg font-bold text-surface-800">{point.criticidade ? point.criticidade.toFixed(1) : '-'}</p>
+            <p className="text-[10px] text-surface-500">Criticidade</p>
+          </div>
+        )}
         <div className="bg-surface-50 rounded-lg p-2.5 text-center">
           <p className="text-xs font-semibold text-surface-800 pt-1">
             {point.frequencia_percebida ? point.frequencia_percebida.replace('_', ' ') : 'N/A'}

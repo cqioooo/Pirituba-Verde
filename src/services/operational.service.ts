@@ -1,366 +1,350 @@
-import type { ScenarioSummary, OperationalAlert, PriorityRankingItem, DrilldownResponse } from '@/types/operational';
+/**
+ * Serviço de inteligência operacional.
+ * 
+ * Todas as funções são assíncronas e buscam dados reais da view v_pontos_gestor
+ * no Supabase. Quando o Supabase não está configurado, retorna dados derivados
+ * de lógica simplificada.
+ */
+
+import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
+import type { PontoGestor } from '@/types';
+import { classificarCriticidade } from '@/types';
+import type {
+  ScenarioSummary,
+  OperationalAlert,
+  PriorityRankingItem,
+  DrilldownResponse,
+  DrilldownItem,
+  CriticidadeLabel,
+} from '@/types/operational';
+
+// ── Utilitários ──
+
+function getPeriodDate(periodo: string): Date {
+  const now = new Date();
+  if (periodo === 'hoje') { now.setHours(0, 0, 0, 0); return now; }
+  if (periodo === '7d') { now.setDate(now.getDate() - 7); return now; }
+  if (periodo === '90d') { now.setDate(now.getDate() - 90); return now; }
+  // Padrão: 30d
+  now.setDate(now.getDate() - 30);
+  return now;
+}
+
+const ACTIVE_STATUSES = ['novo', 'em_confirmacao', 'confirmado', 'em_analise', 'encaminhado'];
+
+function critLabel(valor: number | null | undefined): CriticidadeLabel {
+  const c = classificarCriticidade(valor);
+  if (c === 'critica') return 'Crítica';
+  if (c === 'alta') return 'Alta';
+  if (c === 'media') return 'Média';
+  return 'Baixa';
+}
+
+async function fetchPontosForPeriod(periodo: string): Promise<PontoGestor[]> {
+  if (!isSupabaseConfigured) return [];
+  const since = getPeriodDate(periodo);
+
+  const { data, error } = await supabase
+    .from('v_pontos_gestor')
+    .select('*')
+    .gte('created_at', since.toISOString())
+    .order('criticidade', { ascending: false, nullsFirst: false });
+
+  if (error) throw error;
+  return (data ?? []) as PontoGestor[];
+}
+
+async function fetchAllActivePoints(): Promise<PontoGestor[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('v_pontos_gestor')
+    .select('*')
+    .in('status', ACTIVE_STATUSES)
+    .order('criticidade', { ascending: false, nullsFirst: false });
+  if (error) throw error;
+  return (data ?? []) as PontoGestor[];
+}
 
 // ═══════════════════════════════════════════════
 // Resumo do Cenário
 // ═══════════════════════════════════════════════
 
-const scenariosByPeriod: Record<string, ScenarioSummary> = {
-  'hoje': {
-    title: 'Resumo de hoje',
-    headline: 'Até o momento, 3 novos pontos foram registrados e 2 pontos críticos seguem sem atualização.',
-    supportingText: 'A maior movimentação está concentrada no Jd. Felicidade, com registros recorrentes.'
-  },
-  '7d': {
-    title: 'Resumo dos últimos 7 dias',
-    headline: 'Nos últimos 7 dias, houve aumento de novos pontos em Pirituba, com concentração maior em áreas recorrentes.',
-    supportingText: 'A reincidência cresceu mais do que os novos registros, indicando repetição do problema em áreas já conhecidas.'
-  },
-  '30d': {
-    title: 'Resumo dos últimos 30 dias',
-    headline: 'O período mostra estabilidade geral, mas os pontos críticos seguem concentrados em poucos locais.',
-    supportingText: 'Entulho lidera as categorias com 58% dos registros. A taxa de confirmação comunitária se manteve em 68%.'
-  },
-  '90d': {
-    title: 'Resumo do trimestre',
-    headline: 'Os dados do trimestre indicam maior pressão operacional em pontos já confirmados e em análise.',
-    supportingText: 'Vila Zatt e Jd. Felicidade concentram 60% dos registros recorrentes do período.'
-  },
+const periodLabels: Record<string, string> = {
+  'hoje': 'Resumo de hoje',
+  '7d': 'Resumo dos últimos 7 dias',
+  '30d': 'Resumo dos últimos 30 dias',
+  '90d': 'Resumo do trimestre',
 };
 
-export function getScenarioSummary(periodo: string): ScenarioSummary {
-  return scenariosByPeriod[periodo] || scenariosByPeriod['30d'];
+export async function getScenarioSummary(periodo: string): Promise<ScenarioSummary> {
+  const points = await fetchPontosForPeriod(periodo);
+  const title = periodLabels[periodo] || periodLabels['30d'];
+
+  if (points.length === 0) {
+    return {
+      title,
+      headline: 'Nenhum ponto registrado neste período.',
+      supportingText: 'Ajuste o período para visualizar dados mais antigos.',
+    };
+  }
+
+  const activePoints = points.filter(p => ACTIVE_STATUSES.includes(p.status));
+  const criticalPoints = activePoints.filter(p => (p.criticidade ?? 0) >= 75);
+  const recurrentPoints = activePoints.filter(p => p.recorrente);
+
+  // Bairro com mais pontos
+  const bairroCount: Record<string, number> = {};
+  activePoints.forEach(p => {
+    if (p.bairro) bairroCount[p.bairro] = (bairroCount[p.bairro] || 0) + 1;
+  });
+  const topBairro = Object.entries(bairroCount).sort((a, b) => b[1] - a[1])[0];
+
+  // Categoria líder
+  const catCount: Record<string, number> = {};
+  activePoints.forEach(p => {
+    if (p.categoria_principal) catCount[p.categoria_principal] = (catCount[p.categoria_principal] || 0) + 1;
+  });
+  const topCat = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0];
+
+  const headline = criticalPoints.length > 0
+    ? `No período, ${points.length} pontos foram registrados, dos quais ${criticalPoints.length} possuem criticidade crítica e ${recurrentPoints.length} são recorrentes.`
+    : `No período, ${points.length} pontos foram registrados. ${recurrentPoints.length} são recorrentes.`;
+
+  const parts: string[] = [];
+  if (topBairro) parts.push(`A maior concentração está em ${topBairro[0]} (${topBairro[1]} pontos).`);
+  if (topCat) {
+    const pct = Math.round((topCat[1] / activePoints.length) * 100);
+    parts.push(`${topCat[0]} lidera as categorias com ${pct}% dos registros.`);
+  }
+
+  return {
+    title,
+    headline,
+    supportingText: parts.join(' ') || undefined,
+  };
 }
 
 // ═══════════════════════════════════════════════
 // Alertas Operacionais
 // ═══════════════════════════════════════════════
 
-const alertsByPeriod: Record<string, OperationalAlert[]> = {
-  'hoje': [
-    {
-      id: 'alert-hoje-1',
-      level: 'priority',
-      title: 'Pontos críticos sem atualização',
-      description: '2 pontos com criticidade acima de 80 não receberam movimentação hoje.',
-      relatedDimension: 'criticidade',
-      relatedValue: 'crítica'
-    },
-    {
-      id: 'alert-hoje-2',
-      level: 'info',
-      title: 'Novos registros matinais',
-      description: '3 novos pontos foram registrados antes das 10h, concentrados em Pirituba.',
-      relatedDimension: 'bairro',
-      relatedValue: 'Pirituba'
-    }
-  ],
-  '7d': [
-    {
-      id: 'alert-7d-1',
-      level: 'priority',
-      title: 'Aumento de novos pontos',
-      description: 'Pirituba registrou aumento de 35% em novos pontos nos últimos 7 dias.',
-      relatedDimension: 'bairro',
-      relatedValue: 'Pirituba'
-    },
-    {
-      id: 'alert-7d-2',
-      level: 'warning',
-      title: 'Reincidência em alta',
-      description: 'A taxa de reincidência subiu no período atual, concentrada em pontos já conhecidos.',
-      relatedDimension: 'recorrente',
-      relatedValue: 'true'
-    },
-    {
-      id: 'alert-7d-3',
-      level: 'info',
-      title: 'Entulho predominante',
-      description: 'Entulho voltou a liderar os registros, representando 58% das ocorrências da semana.',
-      relatedDimension: 'categoria',
-      relatedValue: 'Entulho'
-    },
-    {
-      id: 'alert-7d-4',
-      level: 'priority',
-      title: 'Pontos críticos ativos',
-      description: '4 pontos críticos seguem ativos e exigem acompanhamento prioritário.',
-      relatedDimension: 'criticidade',
-      relatedValue: 'crítica'
-    }
-  ],
-  '30d': [
-    {
-      id: 'alert-30d-1',
-      level: 'warning',
-      title: 'Queda na confirmação comunitária',
-      description: 'A taxa de confirmação caiu 5 pontos percentuais em relação ao mês anterior.',
-      relatedDimension: 'confirmacao'
-    },
-    {
-      id: 'alert-30d-2',
-      level: 'priority',
-      title: 'Concentração de reincidência',
-      description: 'Jd. Felicidade concentra 40% dos pontos recorrentes do mês.',
-      relatedDimension: 'bairro',
-      relatedValue: 'Jd. Felicidade'
-    },
-    {
-      id: 'alert-30d-3',
-      level: 'info',
-      title: 'Estabilidade de novos registros',
-      description: 'A média diária de novos pontos se manteve estável em relação ao período anterior.',
-      relatedDimension: 'novos_pontos'
-    },
-    {
-      id: 'alert-30d-4',
-      level: 'warning',
-      title: 'Descarte noturno persistente',
-      description: '62% dos registros continuam ocorrendo entre 18h e 06h.',
-      relatedDimension: 'faixa_horaria',
-      relatedValue: 'Noite'
-    }
-  ],
-  '90d': [
-    {
-      id: 'alert-90d-1',
-      level: 'priority',
-      title: 'Padrão sazonal identificado',
-      description: 'O volume de registros cresceu 20% nos últimos 30 dias em comparação ao início do trimestre.',
-      relatedDimension: 'tendencia'
-    },
-    {
-      id: 'alert-90d-2',
-      level: 'warning',
-      title: 'Áreas críticas sem resolução',
-      description: '3 pontos críticos estão ativos há mais de 60 dias sem mudança de status.',
-      relatedDimension: 'criticidade',
-      relatedValue: 'crítica'
-    },
-    {
-      id: 'alert-90d-3',
-      level: 'info',
-      title: 'Crescimento de confirmações',
-      description: 'O número de confirmações comunitárias cresceu 15% no trimestre.',
-      relatedDimension: 'confirmacao'
-    }
-  ]
-};
+export async function getOperationalAlerts(periodo: string): Promise<OperationalAlert[]> {
+  const points = await fetchPontosForPeriod(periodo);
+  const alerts: OperationalAlert[] = [];
+  let alertId = 0;
 
-export function getOperationalAlerts(periodo: string): OperationalAlert[] {
-  return alertsByPeriod[periodo] || alertsByPeriod['30d'];
+  const activePoints = points.filter(p => ACTIVE_STATUSES.includes(p.status));
+  const criticalPoints = activePoints.filter(p => (p.criticidade ?? 0) >= 75);
+  const recurrentPoints = activePoints.filter(p => p.recorrente);
+
+  // Alerta: pontos críticos ativos
+  if (criticalPoints.length > 0) {
+    alerts.push({
+      id: `alert-${++alertId}`,
+      level: 'priority',
+      title: `${criticalPoints.length} ponto(s) com criticidade crítica`,
+      description: `Existem ${criticalPoints.length} pontos ativos com criticidade acima de 75 que exigem acompanhamento prioritário.`,
+      relatedDimension: 'criticidade',
+      relatedValue: 'crítica',
+    });
+  }
+
+  // Alerta: pontos sem atualização há muito tempo
+  const now = new Date();
+  const stalePoints = activePoints.filter(p => {
+    if (!p.data_ultima_ocorrencia) return false;
+    const lastUpdate = new Date(p.data_ultima_ocorrencia);
+    const daysDiff = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysDiff > 7;
+  });
+  if (stalePoints.length > 0) {
+    alerts.push({
+      id: `alert-${++alertId}`,
+      level: 'warning',
+      title: `${stalePoints.length} ponto(s) sem atualização há mais de 7 dias`,
+      description: `Esses pontos ativos não receberam novas ocorrências ou mudança de status recentemente.`,
+      relatedDimension: 'atualizacao',
+    });
+  }
+
+  // Alerta: reincidência
+  if (recurrentPoints.length > 0) {
+    const recRate = activePoints.length > 0 ? Math.round((recurrentPoints.length / activePoints.length) * 100) : 0;
+    alerts.push({
+      id: `alert-${++alertId}`,
+      level: recRate > 30 ? 'warning' : 'info',
+      title: `Reincidência em ${recRate}% dos pontos ativos`,
+      description: `${recurrentPoints.length} dos ${activePoints.length} pontos ativos do período são recorrentes.`,
+      relatedDimension: 'recorrente',
+      relatedValue: 'true',
+    });
+  }
+
+  // Alerta: concentração por bairro
+  const bairroCount: Record<string, number> = {};
+  activePoints.forEach(p => {
+    if (p.bairro) bairroCount[p.bairro] = (bairroCount[p.bairro] || 0) + 1;
+  });
+  const topBairro = Object.entries(bairroCount).sort((a, b) => b[1] - a[1])[0];
+  if (topBairro && activePoints.length > 0) {
+    const pct = Math.round((topBairro[1] / activePoints.length) * 100);
+    if (pct >= 25) {
+      alerts.push({
+        id: `alert-${++alertId}`,
+        level: pct >= 40 ? 'priority' : 'info',
+        title: `${topBairro[0]} concentra ${pct}% dos pontos ativos`,
+        description: `O bairro ${topBairro[0]} lidera com ${topBairro[1]} pontos ativos no período.`,
+        relatedDimension: 'bairro',
+        relatedValue: topBairro[0],
+      });
+    }
+  }
+
+  // Alerta: categoria dominante
+  const catCount: Record<string, number> = {};
+  activePoints.forEach(p => {
+    if (p.categoria_principal) catCount[p.categoria_principal] = (catCount[p.categoria_principal] || 0) + 1;
+  });
+  const topCat = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0];
+  if (topCat && activePoints.length > 0) {
+    const pct = Math.round((topCat[1] / activePoints.length) * 100);
+    if (pct >= 30) {
+      alerts.push({
+        id: `alert-${++alertId}`,
+        level: 'info',
+        title: `${topCat[0]} lidera com ${pct}% dos registros`,
+        description: `A categoria ${topCat[0]} continua sendo o tipo de descarte mais comum entre os pontos ativos.`,
+        relatedDimension: 'categoria',
+        relatedValue: topCat[0],
+      });
+    }
+  }
+
+  // Se não gerou nenhum alerta, informar
+  if (alerts.length === 0) {
+    alerts.push({
+      id: `alert-${++alertId}`,
+      level: 'info',
+      title: 'Nenhum alerta relevante no período',
+      description: 'Não foram identificadas situações que exijam atenção imediata.',
+    });
+  }
+
+  return alerts;
 }
 
 // ═══════════════════════════════════════════════
 // Ranking de Prioridade
 // ═══════════════════════════════════════════════
 
-const priorityRankingData: PriorityRankingItem[] = [
-  {
-    id: 'pv-001',
-    label: 'PV-001',
-    endereco: 'Rua Agostinho de Azevedo, 150',
-    bairro: 'Jd. Felicidade',
-    status: 'em_analise',
-    criticidade: 92,
-    criticidadeLabel: 'Crítica',
-    recorrente: true,
-    confirmacoes: 8,
-    priorityScore: 96,
-    reason: 'Alta criticidade e reincidência contínua no período.'
-  },
-  {
-    id: 'pv-003',
-    label: 'PV-003',
-    endereco: 'Rua Doutor Joy Arruda, 50',
-    bairro: 'Pirituba',
-    status: 'confirmado',
-    criticidade: 85,
-    criticidadeLabel: 'Crítica',
-    recorrente: true,
-    confirmacoes: 12,
-    priorityScore: 91,
-    reason: 'Ponto recorrente com maior número de confirmações do período.'
-  },
-  {
-    id: 'pv-007',
-    label: 'PV-007',
-    endereco: 'Av. Benedito de Luca, 400',
-    bairro: 'Jd. Felicidade',
-    status: 'em_confirmacao',
-    criticidade: 78,
-    criticidadeLabel: 'Crítica',
-    recorrente: true,
-    confirmacoes: 5,
-    priorityScore: 84,
-    reason: 'Concentra ocorrências recentes e segue sem encaminhamento.'
-  },
-  {
-    id: 'pv-012',
-    label: 'PV-012',
-    endereco: 'Rua Marcos Arruda, 220',
-    bairro: 'Vila Zatt',
-    status: 'novo',
-    criticidade: 72,
-    criticidadeLabel: 'Alta',
-    recorrente: false,
-    confirmacoes: 3,
-    priorityScore: 75,
-    reason: 'Ponto novo com alta criticidade, próximo de área escolar.'
-  },
-  {
-    id: 'pv-005',
-    label: 'PV-005',
-    endereco: 'Rua Silvestre Vasconcelos, 88',
-    bairro: 'Pirituba',
-    status: 'em_analise',
-    criticidade: 68,
-    criticidadeLabel: 'Alta',
-    recorrente: true,
-    confirmacoes: 6,
-    priorityScore: 72,
-    reason: 'Ponto ativo há mais de 30 dias, ainda sem resolução.'
-  },
-  {
-    id: 'pv-018',
-    label: 'PV-018',
-    endereco: 'Travessa do Comércio, 15',
-    bairro: 'Jd. São Carlos',
-    status: 'encaminhado',
-    criticidade: 55,
-    criticidadeLabel: 'Alta',
-    recorrente: false,
-    confirmacoes: 4,
-    priorityScore: 62,
-    reason: 'Está entre os pontos com maior pressão operacional do período.'
-  },
-  {
-    id: 'pv-021',
-    label: 'PV-021',
-    endereco: 'Rua Padre Estêvão Pernet, 300',
-    bairro: 'Vila Zatt',
-    status: 'em_confirmacao',
-    criticidade: 48,
-    criticidadeLabel: 'Média',
-    recorrente: true,
-    confirmacoes: 2,
-    priorityScore: 55,
-    reason: 'Reincidência identificada com confirmações crescentes.'
+function computePriorityScore(p: PontoGestor): number {
+  const crit = p.criticidade ?? 0;
+  const recBonus = p.recorrente ? 10 : 0;
+  const confirmBonus = Math.min(p.confirmacoes * 1.5, 15);
+  
+  // Penalizar pontos sem atualização recente (mais urgentes)
+  let staleBonus = 0;
+  if (p.data_ultima_ocorrencia) {
+    const days = Math.floor((Date.now() - new Date(p.data_ultima_ocorrencia).getTime()) / (1000 * 60 * 60 * 24));
+    staleBonus = Math.min(days * 0.5, 10);
   }
-];
 
-export function getPriorityRanking(_periodo: string): PriorityRankingItem[] {
-  return priorityRankingData;
+  return Math.min(Math.round(crit + recBonus + confirmBonus + staleBonus), 100);
+}
+
+function generateReason(p: PontoGestor): string {
+  const parts: string[] = [];
+  if ((p.criticidade ?? 0) >= 75) parts.push('criticidade crítica');
+  else if ((p.criticidade ?? 0) >= 50) parts.push('criticidade alta');
+  if (p.recorrente) parts.push('ponto recorrente');
+  if (p.confirmacoes >= 5) parts.push(`${p.confirmacoes} confirmações`);
+  
+  if (p.data_ultima_ocorrencia) {
+    const days = Math.floor((Date.now() - new Date(p.data_ultima_ocorrencia).getTime()) / (1000 * 60 * 60 * 24));
+    if (days > 14) parts.push(`ativo há ${days} dias`);
+  }
+
+  return parts.length > 0
+    ? parts.join(', ').replace(/^./, c => c.toUpperCase()) + '.'
+    : 'Ponto ativo no período.';
+}
+
+export async function getPriorityRanking(_periodo: string): Promise<PriorityRankingItem[]> {
+  const allActive = await fetchAllActivePoints();
+  
+  if (allActive.length === 0) return [];
+
+  return allActive
+    .map(p => ({
+      id: p.id,
+      label: p.id.split('-')[0].toUpperCase(),
+      endereco: p.endereco || 'Endereço não informado',
+      bairro: p.bairro || 'Desconhecido',
+      status: p.status,
+      criticidade: p.criticidade ?? 0,
+      criticidadeLabel: critLabel(p.criticidade),
+      recorrente: p.recorrente,
+      confirmacoes: p.confirmacoes,
+      priorityScore: computePriorityScore(p),
+      reason: generateReason(p),
+    }))
+    .sort((a, b) => b.priorityScore - a.priorityScore)
+    .slice(0, 10);
 }
 
 // ═══════════════════════════════════════════════
 // Drill-down
 // ═══════════════════════════════════════════════
 
-const drilldownDatabase: Record<string, DrilldownResponse> = {
-  'status::novo': {
-    title: 'Pontos com status Novo',
-    subtitle: 'Pontos registrados recentemente que ainda não foram analisados.',
-    total: 3,
-    items: [
-      { id: 'pv-012', endereco: 'Rua Marcos Arruda, 220', bairro: 'Vila Zatt', status: 'novo', criticidade: 72, criticidadeLabel: 'Alta', recorrente: false, lastOccurrenceAt: '2026-06-17' },
-      { id: 'pv-025', endereco: 'Rua José Pires, 180', bairro: 'Pirituba', status: 'novo', criticidade: 45, criticidadeLabel: 'Média', recorrente: false, lastOccurrenceAt: '2026-06-16' },
-      { id: 'pv-030', endereco: 'Av. Paula Ferreira, 500', bairro: 'Jd. São Carlos', status: 'novo', criticidade: 30, criticidadeLabel: 'Média', recorrente: false, lastOccurrenceAt: '2026-06-15' },
-    ]
-  },
-  'status::em confirmacao': {
-    title: 'Pontos em Confirmação',
-    subtitle: 'Pontos aguardando confirmação da comunidade.',
-    total: 4,
-    items: [
-      { id: 'pv-007', endereco: 'Av. Benedito de Luca, 400', bairro: 'Jd. Felicidade', status: 'em_confirmacao', criticidade: 78, criticidadeLabel: 'Crítica', recorrente: true, lastOccurrenceAt: '2026-06-17' },
-      { id: 'pv-021', endereco: 'Rua Padre Estêvão Pernet, 300', bairro: 'Vila Zatt', status: 'em_confirmacao', criticidade: 48, criticidadeLabel: 'Média', recorrente: true, lastOccurrenceAt: '2026-06-16' },
-      { id: 'pv-033', endereco: 'Rua Cel. Francisco Amaro, 90', bairro: 'Pirituba', status: 'em_confirmacao', criticidade: 35, criticidadeLabel: 'Média', recorrente: false, lastOccurrenceAt: '2026-06-14' },
-      { id: 'pv-038', endereco: 'Rua Mário Cardim, 45', bairro: 'Jd. São Carlos', status: 'em_confirmacao', criticidade: 22, criticidadeLabel: 'Baixa', recorrente: false, lastOccurrenceAt: '2026-06-12' },
-    ]
-  },
-  'status::confirmado': {
-    title: 'Pontos Confirmados',
-    subtitle: 'Pontos validados pela comunidade.',
-    total: 2,
-    items: [
-      { id: 'pv-003', endereco: 'Rua Doutor Joy Arruda, 50', bairro: 'Pirituba', status: 'confirmado', criticidade: 85, criticidadeLabel: 'Crítica', recorrente: true, lastOccurrenceAt: '2026-06-14' },
-      { id: 'pv-040', endereco: 'Rua São Roque, 120', bairro: 'Vila Zatt', status: 'confirmado', criticidade: 52, criticidadeLabel: 'Alta', recorrente: false, lastOccurrenceAt: '2026-06-10' },
-    ]
-  },
-  'status::em analise': {
-    title: 'Pontos em Análise',
-    subtitle: 'Pontos sob avaliação da gestão.',
-    total: 2,
-    items: [
-      { id: 'pv-001', endereco: 'Rua Agostinho de Azevedo, 150', bairro: 'Jd. Felicidade', status: 'em_analise', criticidade: 92, criticidadeLabel: 'Crítica', recorrente: true, lastOccurrenceAt: '2026-06-15' },
-      { id: 'pv-005', endereco: 'Rua Silvestre Vasconcelos, 88', bairro: 'Pirituba', status: 'em_analise', criticidade: 68, criticidadeLabel: 'Alta', recorrente: true, lastOccurrenceAt: '2026-06-13' },
-    ]
-  },
-  'categoria::Entulho': {
-    title: 'Pontos da categoria Entulho',
-    subtitle: 'Pontos onde o resíduo predominante é entulho de construção.',
-    total: 5,
-    items: [
-      { id: 'pv-001', endereco: 'Rua Agostinho de Azevedo, 150', bairro: 'Jd. Felicidade', status: 'em_analise', criticidade: 92, criticidadeLabel: 'Crítica', recorrente: true, lastOccurrenceAt: '2026-06-15' },
-      { id: 'pv-012', endereco: 'Rua Marcos Arruda, 220', bairro: 'Vila Zatt', status: 'novo', criticidade: 72, criticidadeLabel: 'Alta', recorrente: false, lastOccurrenceAt: '2026-06-17' },
-      { id: 'pv-025', endereco: 'Rua José Pires, 180', bairro: 'Pirituba', status: 'novo', criticidade: 45, criticidadeLabel: 'Média', recorrente: false, lastOccurrenceAt: '2026-06-16' },
-      { id: 'pv-033', endereco: 'Rua Cel. Francisco Amaro, 90', bairro: 'Pirituba', status: 'em_confirmacao', criticidade: 35, criticidadeLabel: 'Média', recorrente: false, lastOccurrenceAt: '2026-06-14' },
-      { id: 'pv-038', endereco: 'Rua Mário Cardim, 45', bairro: 'Jd. São Carlos', status: 'em_confirmacao', criticidade: 22, criticidadeLabel: 'Baixa', recorrente: false, lastOccurrenceAt: '2026-06-12' },
-    ]
-  },
-  'categoria::Móveis': {
-    title: 'Pontos da categoria Móveis',
-    subtitle: 'Pontos com descarte de móveis e volumosos.',
-    total: 3,
-    items: [
-      { id: 'pv-007', endereco: 'Av. Benedito de Luca, 400', bairro: 'Jd. Felicidade', status: 'em_confirmacao', criticidade: 78, criticidadeLabel: 'Crítica', recorrente: true, lastOccurrenceAt: '2026-06-17' },
-      { id: 'pv-021', endereco: 'Rua Padre Estêvão Pernet, 300', bairro: 'Vila Zatt', status: 'em_confirmacao', criticidade: 48, criticidadeLabel: 'Média', recorrente: true, lastOccurrenceAt: '2026-06-16' },
-      { id: 'pv-040', endereco: 'Rua São Roque, 120', bairro: 'Vila Zatt', status: 'confirmado', criticidade: 52, criticidadeLabel: 'Alta', recorrente: false, lastOccurrenceAt: '2026-06-10' },
-    ]
-  },
-  'categoria::Lixo Doméstico': {
-    title: 'Pontos da categoria Lixo Doméstico',
-    subtitle: 'Pontos com descarte de lixo doméstico irregular.',
-    total: 2,
-    items: [
-      { id: 'pv-003', endereco: 'Rua Doutor Joy Arruda, 50', bairro: 'Pirituba', status: 'confirmado', criticidade: 85, criticidadeLabel: 'Crítica', recorrente: true, lastOccurrenceAt: '2026-06-14' },
-      { id: 'pv-030', endereco: 'Av. Paula Ferreira, 500', bairro: 'Jd. São Carlos', status: 'novo', criticidade: 30, criticidadeLabel: 'Média', recorrente: false, lastOccurrenceAt: '2026-06-15' },
-    ]
-  },
-  'recorrencia::Jd. Felicidade': {
-    title: 'Pontos recorrentes em Jd. Felicidade',
-    subtitle: 'Pontos com histórico de reincidência neste bairro.',
-    total: 2,
-    items: [
-      { id: 'pv-001', endereco: 'Rua Agostinho de Azevedo, 150', bairro: 'Jd. Felicidade', status: 'em_analise', criticidade: 92, criticidadeLabel: 'Crítica', recorrente: true, lastOccurrenceAt: '2026-06-15' },
-      { id: 'pv-007', endereco: 'Av. Benedito de Luca, 400', bairro: 'Jd. Felicidade', status: 'em_confirmacao', criticidade: 78, criticidadeLabel: 'Crítica', recorrente: true, lastOccurrenceAt: '2026-06-17' },
-    ]
-  },
-  'recorrencia::Vila Zatt': {
-    title: 'Pontos recorrentes em Vila Zatt',
-    subtitle: 'Pontos com histórico de reincidência neste bairro.',
-    total: 1,
-    items: [
-      { id: 'pv-021', endereco: 'Rua Padre Estêvão Pernet, 300', bairro: 'Vila Zatt', status: 'em_confirmacao', criticidade: 48, criticidadeLabel: 'Média', recorrente: true, lastOccurrenceAt: '2026-06-16' },
-    ]
-  },
-  'recorrencia::Pirituba': {
-    title: 'Pontos recorrentes em Pirituba',
-    subtitle: 'Pontos com histórico de reincidência neste bairro.',
-    total: 2,
-    items: [
-      { id: 'pv-003', endereco: 'Rua Doutor Joy Arruda, 50', bairro: 'Pirituba', status: 'confirmado', criticidade: 85, criticidadeLabel: 'Crítica', recorrente: true, lastOccurrenceAt: '2026-06-14' },
-      { id: 'pv-005', endereco: 'Rua Silvestre Vasconcelos, 88', bairro: 'Pirituba', status: 'em_analise', criticidade: 68, criticidadeLabel: 'Alta', recorrente: true, lastOccurrenceAt: '2026-06-13' },
-    ]
-  },
-};
+function pontoToDrilldownItem(p: PontoGestor): DrilldownItem {
+  return {
+    id: p.id,
+    endereco: p.endereco || 'Endereço não informado',
+    bairro: p.bairro || 'Desconhecido',
+    status: p.status,
+    criticidade: p.criticidade ?? 0,
+    criticidadeLabel: critLabel(p.criticidade),
+    recorrente: p.recorrente,
+    lastOccurrenceAt: p.data_ultima_ocorrencia || p.created_at,
+  };
+}
 
-export function getChartDrilldownData(sourceChart: string, filterValue: string): DrilldownResponse {
-  const key = `${sourceChart}::${filterValue}`;
-  return drilldownDatabase[key] || {
-    title: `Pontos: ${filterValue}`,
-    subtitle: 'Lista dos pontos que compõem este agrupamento.',
-    total: 0,
-    items: []
+export async function getChartDrilldownData(sourceChart: string, filterValue: string): Promise<DrilldownResponse> {
+  const allActive = await fetchAllActivePoints();
+
+  let filtered: PontoGestor[] = [];
+  let title = `Pontos: ${filterValue}`;
+  let subtitle = 'Lista dos pontos que compõem este agrupamento.';
+
+  if (sourceChart === 'status') {
+    // Map display label back to db status
+    const statusMap: Record<string, string> = {
+      'Novo': 'novo', 'Em Confirmação': 'em_confirmacao', 'Em confirmação': 'em_confirmacao',
+      'Confirmado': 'confirmado', 'Em Análise': 'em_analise', 'Em análise': 'em_analise',
+      'Encaminhado': 'encaminhado', 'Resolvido': 'resolvido', 'Inválido': 'invalido',
+    };
+    const dbStatus = statusMap[filterValue] || filterValue.toLowerCase().replace(/ /g, '_');
+    filtered = allActive.filter(p => p.status === dbStatus);
+    title = `Pontos com status ${filterValue}`;
+    subtitle = `Pontos registrados com status "${filterValue}".`;
+  } else if (sourceChart === 'categoria') {
+    filtered = allActive.filter(p => p.categoria_principal === filterValue);
+    title = `Pontos da categoria ${filterValue}`;
+    subtitle = `Pontos onde o resíduo predominante é ${filterValue.toLowerCase()}.`;
+  } else if (sourceChart === 'recorrencia') {
+    filtered = allActive.filter(p => p.bairro === filterValue && p.recorrente);
+    title = `Pontos recorrentes em ${filterValue}`;
+    subtitle = `Pontos com histórico de reincidência neste bairro.`;
+  } else {
+    filtered = allActive;
+  }
+
+  return {
+    title,
+    subtitle,
+    total: filtered.length,
+    items: filtered
+      .sort((a, b) => (b.criticidade ?? 0) - (a.criticidade ?? 0))
+      .map(pontoToDrilldownItem),
   };
 }

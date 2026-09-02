@@ -21,6 +21,7 @@ import { RegisterForm } from '@/features/auth/components/RegisterForm';
 import { Dashboard } from '@/features/citizen/pages/Dashboard';
 import { MapPage } from '@/features/citizen/pages/MapPage';
 import { MyReports } from '@/features/citizen/pages/MyReports';
+import { DenunciaDetail } from '@/features/citizen/pages/DenunciaDetail';
 
 import { Notifications } from '@/features/citizen/pages/Notifications';
 import { Profile } from '@/features/citizen/pages/Profile';
@@ -90,6 +91,10 @@ export const router = createBrowserRouter([
       {
         path: '/app/minhas-denuncias',
         element: <MyReports />,
+      },
+      {
+        path: '/app/denuncia/:id',
+        element: <DenunciaDetail />,
       },
 
       {

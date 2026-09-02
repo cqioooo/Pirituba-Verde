@@ -4,6 +4,7 @@ import L from 'leaflet';
 import type { PontoPublico, PontoAutenticado } from '@/types';
 import { WASTE_CATEGORY_COLORS, WASTE_CATEGORY_LABELS, POINT_STATUS_LABELS, POINT_STATUS_VARIANTS } from '@/types';
 import { Badge } from '@/components/ui';
+import { useLocation } from 'react-router-dom';
 
 // ── Custom marker icon factory ──
 
@@ -80,6 +81,9 @@ interface AuthPointMarkerProps {
 }
 
 export function AuthPointMarker({ point, selected = false, onClick }: AuthPointMarkerProps) {
+  const location = useLocation();
+  const isGestorArea = location.pathname.startsWith('/gestao');
+
   const categoria = point.categoria_principal || 'misto';
   const color = WASTE_CATEGORY_COLORS[categoria] || WASTE_CATEGORY_COLORS.misto;
   const label = WASTE_CATEGORY_LABELS[categoria] || 'Misto';
@@ -113,7 +117,7 @@ export function AuthPointMarker({ point, selected = false, onClick }: AuthPointM
               Visto: {point.frequencia_percebida || 'Não informado'} | Vol: {point.volume_estimado || 'Não informado'}
             </p>
             <p className="text-[10px] text-surface-400">
-              {point.confirmacoes} confirmações · Criticidade: {point.criticidade ? point.criticidade.toFixed(1) : '0'}
+              {point.confirmacoes} confirmações{isGestorArea && point.criticidade !== null && ` · Criticidade: ${point.criticidade.toFixed(1)}`}
             </p>
           </div>
         </Popup>
