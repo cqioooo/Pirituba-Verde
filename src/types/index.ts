@@ -47,6 +47,8 @@ export type {
   PointDetailState,
   HistoricoStatusPontoCidadao,
   DetalheDenuncia,
+  OcorrenciaDetalheGestao,
+  EvidenciaAssinada,
 } from './database';
 export { EMPTY_REPORT_DRAFT, classificarCriticidade } from './database';
 

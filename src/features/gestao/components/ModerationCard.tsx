@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button, Card, Textarea } from '@/components/ui';
 import { WASTE_CATEGORY_LABELS } from '@/types';
 import type { ModeracaoOcorrencia, Ocorrencia } from '@/types';
@@ -6,6 +7,7 @@ import { formatDate } from '@/lib/utils';
 import { useAuth } from '@/providers/AuthProvider';
 import { useApproveModeracao, useRejectModeracao } from '@/services/queries';
 import { Check, X, Warning } from '@phosphor-icons/react';
+import { SignedEvidenceThumbnail } from '@/components/shared/SignedEvidenceThumbnail';
 
 interface ModerationCardProps {
   item: ModeracaoOcorrencia & { ocorrencia: Ocorrencia };
@@ -35,17 +37,13 @@ export function ModerationCard({ item }: ModerationCardProps) {
   return (
     <Card className="overflow-hidden flex flex-col md:flex-row">
       <div className="w-full md:w-1/3 h-48 md:h-auto bg-surface-100 relative">
-        {fotoUrls.length > 0 ? (
-          <img 
-            src={fotoUrls[0]} 
-            alt="Evidência" 
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-surface-400">
-            Sem foto
-          </div>
-        )}
+        <SignedEvidenceThumbnail
+          contextId={item.ocorrencia.id}
+          path={fotoUrls[0]}
+          alt="Evidência da ocorrência"
+          className="h-full w-full object-cover"
+          fallbackClassName="h-full w-full"
+        />
         <div className="absolute top-2 left-2 bg-warning-500 text-white text-xs font-bold px-2 py-1 rounded flex items-center">
           <Warning className="w-3 h-3 mr-1" />
           {item.motivo}
@@ -72,6 +70,12 @@ export function ModerationCard({ item }: ModerationCardProps) {
         </p>
 
         <div className="mt-auto space-y-3">
+          <Link
+            to={`/gestao/ocorrencias/${item.ocorrencia.id}`}
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-primary-700/30 px-4 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700"
+          >
+            Ver detalhes da ocorrência
+          </Link>
           <Textarea
             label=""
             placeholder="Observação da moderação (opcional)..."

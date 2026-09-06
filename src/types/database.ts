@@ -299,6 +299,54 @@ export interface DetalheDenuncia {
   historico: HistoricoStatusPontoCidadao[];
 }
 
+/**
+ * Dados disponíveis hoje para o detalhe de ocorrência da gestão.
+ *
+ * O schema atual não possui ciclo_id, evidencias ou ocorrencia_historico.
+ * Por isso, confirmações e histórico são agregados pelo ponto vinculado e
+ * ciclos_anteriores permanece nulo até existir uma definição persistida.
+ */
+export interface OcorrenciaDetalheGestao {
+  ocorrencia: Pick<
+    Ocorrencia,
+    | 'id'
+    | 'ponto_id'
+    | 'data_registro'
+    | 'created_at'
+    | 'descricao'
+    | 'categoria_principal'
+    | 'tipo_residuo'
+    | 'volume_estimado'
+    | 'frequencia_percebida'
+    | 'horario_percebido'
+    | 'latitude'
+    | 'longitude'
+    | 'status'
+    | 'tipo'
+  >;
+  ponto: Pick<
+    PontoGestor,
+    | 'id'
+    | 'endereco'
+    | 'bairro'
+    | 'subprefeitura'
+    | 'status'
+    | 'quantidade_ocorrencias'
+    | 'recorrente'
+  > | null;
+  evidencias_paths: string[];
+  historico_ponto: Omit<HistoricoStatusPonto, 'alterado_por'>[];
+  confirmacoes_distintas_ponto: number;
+  ciclos_anteriores: number | null;
+}
+
+/** Referência temporária de uma evidência privada do Storage. */
+export interface EvidenciaAssinada {
+  path: string;
+  signed_url: string | null;
+  disponivel: boolean;
+}
+
 export interface ModeracaoOcorrencia {
   id: string;
   ocorrencia_id: string;

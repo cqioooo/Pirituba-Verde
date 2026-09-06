@@ -27,6 +27,8 @@ import type {
   StatusPonto,
   Confirmacao,
   IndicadorDiario,
+  OcorrenciaDetalheGestao,
+  EvidenciaAssinada,
 } from '@/types';
 
 // ── Helpers ──
@@ -315,12 +317,7 @@ export async function uploadFoto(userId: string, file: File): Promise<string> {
     });
 
   if (error) throw error;
-
-  const { data: urlData } = supabase.storage
-    .from('fotos-ocorrencias')
-    .getPublicUrl(path);
-
-  return urlData.publicUrl;
+  return path;
 }
 
 // ── Notificações ──
@@ -402,6 +399,222 @@ export async function fetchOcorrenciasByPonto(pontoId: string): Promise<Ocorrenc
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []) as Ocorrencia[];
+}
+
+const EVIDENCE_BUCKET = 'fotos-ocorrencias';
+export const EVIDENCE_SIGNED_URL_TTL_SECONDS = 10 * 60;
+
+function normalizeEvidencePath(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  let path = trimmed;
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const pathname = new URL(trimmed).pathname;
+      const markers = [
+        `/storage/v1/object/public/${EVIDENCE_BUCKET}/`,
+        `/storage/v1/object/sign/${EVIDENCE_BUCKET}/`,
+        `/storage/v1/object/authenticated/${EVIDENCE_BUCKET}/`,
+      ];
+      const marker = markers.find(candidate => pathname.includes(candidate));
+      if (!marker) return null;
+      path = decodeURIComponent(pathname.slice(pathname.indexOf(marker) + marker.length));
+    } catch {
+      return null;
+    }
+  }
+
+  if (path.startsWith(`${EVIDENCE_BUCKET}/`)) {
+    path = path.slice(EVIDENCE_BUCKET.length + 1);
+  }
+
+  path = path.replace(/^\/+/, '');
+  if (!path || path.split('/').some(segment => segment === '..')) return null;
+  return path;
+}
+
+/**
+ * Consulta orquestrada do detalhe de ocorrência para a gestão.
+ * A autorização efetiva continua sendo responsabilidade das policies RLS.
+ */
+export async function fetchOcorrenciaDetalheGestao(
+  ocorrenciaId: string
+): Promise<OcorrenciaDetalheGestao | null> {
+  assertConfigured();
+
+  const { data, error } = await supabase
+    .from('ocorrencias')
+    .select(`
+      id,
+      ponto_id,
+      data_registro,
+      created_at,
+      descricao,
+      tipo_residuo,
+      volume_estimado,
+      frequencia_percebida,
+      horario_percebido,
+      latitude,
+      longitude,
+      status,
+      tipo,
+      fotos,
+      foto_url,
+      pontos_descarte!left(
+        id,
+        endereco,
+        bairro,
+        subprefeitura,
+        categoria_principal,
+        status,
+        quantidade_ocorrencias,
+        recorrente
+      )
+    `)
+    .eq('id', ocorrenciaId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[F4.2] Falha ao buscar a ocorrência da gestão:', JSON.stringify({
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    }));
+    throw error;
+  }
+  if (!data) return null;
+
+  const raw = data as unknown as {
+    id: string;
+    ponto_id: string | null;
+    data_registro: string;
+    created_at: string;
+    descricao: string | null;
+    tipo_residuo: string | string[] | null;
+    volume_estimado: string | null;
+    frequencia_percebida: string | null;
+    horario_percebido: string | null;
+    latitude: number;
+    longitude: number;
+    status: Ocorrencia['status'];
+    tipo: Ocorrencia['tipo'];
+    fotos: string[] | null;
+    foto_url: string | null;
+    pontos_descarte: (OcorrenciaDetalheGestao['ponto'] & {
+      categoria_principal: string | null;
+    }) | null;
+  };
+
+  let historicoPonto: OcorrenciaDetalheGestao['historico_ponto'] = [];
+  let confirmacoesDistintasPonto = 0;
+
+  if (raw.ponto_id) {
+    const [historicoResult, confirmacoesResult] = await Promise.all([
+      supabase
+        .from('historico_status_ponto')
+        .select('id, ponto_id, status_anterior, status_novo, motivo, created_at')
+        .eq('ponto_id', raw.ponto_id)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('confirmacoes')
+        .select('usuario_id')
+        .eq('ponto_id', raw.ponto_id),
+    ]);
+
+    if (historicoResult.error) throw historicoResult.error;
+    if (confirmacoesResult.error) throw confirmacoesResult.error;
+
+    historicoPonto = (historicoResult.data ?? []) as OcorrenciaDetalheGestao['historico_ponto'];
+    confirmacoesDistintasPonto = new Set(
+      (confirmacoesResult.data ?? []).map(item => item.usuario_id)
+    ).size;
+  }
+
+  const possiblePaths = [...(raw.fotos ?? []), ...(raw.foto_url ? [raw.foto_url] : [])];
+  const storagePaths = [...new Set(
+    possiblePaths
+      .map(normalizeEvidencePath)
+      .filter((value): value is string => Boolean(value))
+  )];
+
+  return {
+    ocorrencia: {
+      id: raw.id,
+      ponto_id: raw.ponto_id,
+      data_registro: raw.data_registro,
+      created_at: raw.created_at,
+      descricao: raw.descricao,
+      categoria_principal: raw.pontos_descarte?.categoria_principal ?? null,
+      tipo_residuo: raw.tipo_residuo,
+      volume_estimado: raw.volume_estimado,
+      frequencia_percebida: raw.frequencia_percebida,
+      horario_percebido: raw.horario_percebido,
+      latitude: raw.latitude,
+      longitude: raw.longitude,
+      status: raw.status,
+      tipo: raw.tipo,
+    },
+    ponto: raw.pontos_descarte,
+    evidencias_paths: storagePaths,
+    historico_ponto: historicoPonto,
+    confirmacoes_distintas_ponto: confirmacoesDistintasPonto,
+    ciclos_anteriores: null,
+  };
+}
+
+/**
+ * Resolve a entrada da tela pelo ponto de descarte.
+ *
+ * A listagem de gestão navega com o id do ponto, enquanto a F4.2 detalha uma
+ * ocorrência. Selecionamos explicitamente a ocorrência mais recente do ponto
+ * e reutilizamos a consulta completa, mantendo uma única montagem do payload.
+ */
+export async function fetchOcorrenciaDetalheGestaoPorPonto(
+  pontoId: string
+): Promise<OcorrenciaDetalheGestao | null> {
+  assertConfigured();
+
+  const { data, error } = await supabase
+    .from('ocorrencias')
+    .select('id')
+    .eq('ponto_id', pontoId)
+    .order('data_registro', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[F4.2] Falha ao localizar a ocorrência mais recente do ponto:', error);
+    throw error;
+  }
+  if (!data) return null;
+
+  return fetchOcorrenciaDetalheGestao(data.id);
+}
+
+/** Gera acessos temporários sem devolver URL pública permanente à interface. */
+export async function fetchEvidenciasAssinadas(
+  paths: string[]
+): Promise<EvidenciaAssinada[]> {
+  assertConfigured();
+
+  return Promise.all(paths.map(async path => {
+    const normalizedPath = normalizeEvidencePath(path);
+    if (!normalizedPath) {
+      return { path, signed_url: null, disponivel: false };
+    }
+
+    const { data, error } = await supabase.storage
+      .from(EVIDENCE_BUCKET)
+      .createSignedUrl(normalizedPath, EVIDENCE_SIGNED_URL_TTL_SECONDS);
+
+    return {
+      path: normalizedPath,
+      signed_url: error ? null : data.signedUrl,
+      disponivel: !error && Boolean(data.signedUrl),
+    };
+  }));
 }
 
 export async function fetchConfirmacoesByPonto(pontoId: string): Promise<Confirmacao[]> {
