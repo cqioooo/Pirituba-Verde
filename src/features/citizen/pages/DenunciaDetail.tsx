@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
-import { useDetalheDenuncia } from '@/services/queries';
-import { Spinner, Badge, Button } from '@/components/ui';
+import { useDetalheDenuncia, useEvidenciasAssinadas } from '@/services/queries';
+import { Badge, Button } from '@/components/ui';
 import {
   ArrowLeft,
   MapPin,
@@ -155,12 +155,16 @@ export function DenunciaDetail() {
   const { user } = useAuth();
 
   const { data: denuncia, isLoading, isError } = useDetalheDenuncia(id, user?.id);
+  const evidencePaths = denuncia ? normalizePhotos(denuncia.fotos, denuncia.foto_url) : [];
+  const evidenceQuery = useEvidenciasAssinadas(id ?? '', evidencePaths);
 
   if (isLoading) return <DenunciaDetailSkeleton />;
   if (isError || !denuncia) return <DenunciaNotFound />;
 
   const ponto = denuncia.pontos_descarte;
-  const fotos = normalizePhotos(denuncia.fotos, denuncia.foto_url);
+  const fotos = (evidenceQuery.data ?? [])
+    .filter(item => item.disponivel && item.signed_url)
+    .map(item => item.signed_url as string);
   const pontoStatusLabel = ponto ? (POINT_STATUS_LABELS[ponto.status] ?? ponto.status) : null;
   const pontoStatusVariant = ponto
     ? (POINT_STATUS_VARIANTS[ponto.status] ?? 'neutral')
@@ -236,7 +240,11 @@ export function DenunciaDetail() {
         <h2 className="text-sm font-semibold text-surface-700 uppercase tracking-wider mb-4">
           Fotos
         </h2>
-        {fotos.length > 0 ? (
+        {evidencePaths.length > 0 && evidenceQuery.isLoading ? (
+          <div role="status" aria-label="Carregando fotos" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {[0, 1].map(index => <div key={index} className="aspect-square animate-pulse rounded-2xl bg-surface-100" />)}
+          </div>
+        ) : fotos.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {fotos.map((url, i) => (
               <a
@@ -261,7 +269,9 @@ export function DenunciaDetail() {
             <div className="w-12 h-12 rounded-full bg-surface-100 flex items-center justify-center mb-3">
               <Image className="w-6 h-6 text-surface-400" weight="duotone" />
             </div>
-            <p className="text-sm text-surface-400">Nenhuma foto disponível</p>
+            <p className="text-sm text-surface-400">
+              {evidencePaths.length > 0 ? 'Não foi possível abrir as fotos com sua sessão atual' : 'Nenhuma foto disponível'}
+            </p>
           </div>
         )}
       </section>

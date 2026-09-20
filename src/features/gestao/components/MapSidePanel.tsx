@@ -5,6 +5,7 @@ import { X, MapPin, WarningCircle, Check } from '@phosphor-icons/react';
 import { Button, Badge } from '@/components/ui';
 import { CriticidadeBadge } from './CriticidadeBadge';
 import { useNavigate } from 'react-router-dom';
+import { SignedEvidenceThumbnail } from '@/components/shared/SignedEvidenceThumbnail';
 
 interface MapSidePanelProps {
   ponto: PontoGestor | null;
@@ -99,7 +100,13 @@ export function MapSidePanel({ ponto, onClose }: MapSidePanelProps) {
           <div>
              <p className="text-xs text-surface-500 mb-2">Última imagem registrada</p>
              <div className="aspect-video w-full rounded-lg overflow-hidden bg-surface-100">
-               <img src={ponto.ultima_foto_url} alt="Última evidência" className="w-full h-full object-cover" />
+               <SignedEvidenceThumbnail
+                 contextId={ponto.id}
+                 path={ponto.ultima_foto_url}
+                 alt="Última evidência"
+                 className="h-full w-full object-cover"
+                 fallbackClassName="h-full w-full"
+               />
              </div>
           </div>
         )}

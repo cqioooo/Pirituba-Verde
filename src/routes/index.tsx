@@ -33,7 +33,8 @@ import { AlertsPage } from '@/features/gestao/pages/AlertsPage';
 import { GestaoMapPage } from '@/features/gestao/pages/GestaoMapPage';
 import { AnalyticsPage } from '@/features/gestao/pages/AnalyticsPage';
 import { PointsListPage } from '@/features/gestao/pages/PointsListPage';
-import { PointDetailPage } from '@/features/gestao/pages/PointDetailPage';
+import { PointDetailFrontendPage } from '@/features/gestao/pages/PointDetailFrontendPage';
+import { OcorrenciaDetailPage } from '@/features/gestao/pages/OcorrenciaDetailPage';
 import { ModerationPage } from '@/features/gestao/pages/ModerationPage';
 import { SettingsPage } from '@/features/gestao/pages/SettingsPage';
 
@@ -138,7 +139,11 @@ export const router = createBrowserRouter([
       },
       {
         path: '/gestao/pontos/:id',
-        element: <PointDetailPage />,
+        element: <PointDetailFrontendPage />,
+      },
+      {
+        path: '/gestao/ocorrencias/:id',
+        element: <OcorrenciaDetailPage />,
       },
       {
         path: '/gestao/moderacao',

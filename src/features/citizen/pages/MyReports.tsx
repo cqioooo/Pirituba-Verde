@@ -6,19 +6,18 @@ import {
   ArrowSquareOut,
   Plus,
   Warning,
-  Image,
 } from '@phosphor-icons/react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useOcorrenciasUsuario } from '@/services/queries';
 import {
   WASTE_CATEGORY_LABELS,
-  OCORRENCIA_STATUS_LABELS,
   POINT_STATUS_LABELS,
   POINT_STATUS_VARIANTS,
 } from '@/types';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
+import { SignedEvidenceThumbnail } from '@/components/shared/SignedEvidenceThumbnail';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR', {
@@ -133,21 +132,13 @@ export function MyReports() {
                   <div className="flex gap-4">
                     {/* Thumbnail da foto */}
                     <div className="shrink-0">
-                      {thumbUrl ? (
-                        <img
-                          src={thumbUrl}
-                          alt="Foto da denúncia"
-                          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-2xl border border-surface-100"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div
-                          className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-surface-100 border border-surface-200 flex items-center justify-center"
-                          aria-label="Sem foto"
-                        >
-                          <Image className="w-7 h-7 text-surface-400" weight="duotone" />
-                        </div>
-                      )}
+                      <SignedEvidenceThumbnail
+                        contextId={ocorrencia.id}
+                        path={thumbUrl}
+                        alt="Foto da denúncia"
+                        className="h-20 w-20 rounded-2xl border border-surface-100 object-cover sm:h-24 sm:w-24"
+                        fallbackClassName="h-20 w-20 rounded-2xl border border-surface-200 sm:h-24 sm:w-24"
+                      />
                     </div>
 
                     {/* Conteúdo principal */}

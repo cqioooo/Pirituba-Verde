@@ -18,7 +18,7 @@ import { Button, Badge, Spinner, Card } from '@/components/ui';
 import { CriticidadeBadge } from '../components/CriticidadeBadge';
 import { StatusTimeline } from '../components/StatusTimeline';
 import { StatusActions } from '../components/StatusActions';
-import { PhotoGallery } from '../components/PhotoGallery';
+import { OcorrenciaEvidenceGallery } from '../components/OcorrenciaEvidenceGallery';
 import { CaretLeft, MapPin, WarningCircle, CheckCircle, ArrowsClockwise } from '@phosphor-icons/react';
 
 export function PointDetailPage() {
@@ -131,7 +131,7 @@ export function PointDetailPage() {
 
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-surface-900 mb-4 border-b border-surface-100 pb-2">Evidências Fotográficas ({todasFotos.length})</h2>
-            <PhotoGallery photos={todasFotos} />
+            <OcorrenciaEvidenceGallery ocorrenciaId={`ponto-${ponto.id}`} paths={todasFotos} />
           </Card>
 
           <Card className="p-6">

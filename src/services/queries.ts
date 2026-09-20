@@ -26,6 +26,9 @@ import {
   approveModeracao,
   rejectModeracao,
   fetchIndicadoresDiarios,
+  fetchOcorrenciaDetalheGestao,
+  fetchOcorrenciaDetalheGestaoPorPonto,
+  fetchEvidenciasAssinadas,
 } from './supabase.service';
 import {
   getScenarioSummary,
@@ -38,7 +41,7 @@ import {
   getActionableInsights,
   getContextResults,
 } from './actionable.service';
-import type { OcorrenciaInsert, ConfirmacaoInsert, StatusPonto, PontoGestor, DetalheDenuncia } from '@/types';
+import type { OcorrenciaInsert, ConfirmacaoInsert, StatusPonto, PontoGestor, DetalheDenuncia, OcorrenciaDetalheGestao } from '@/types';
 import type { ActionableTarget } from '@/types/operational';
 import { isSupabaseConfigured } from '@/integrations/supabase/client';
 
@@ -492,6 +495,51 @@ export function useOcorrenciasByPonto(pontoId?: string) {
     queryFn: () => fetchOcorrenciasByPonto(pontoId!),
     enabled: !!pontoId,
     staleTime: STALE_TIME_DEFAULT,
+  });
+}
+
+export const ocorrenciaDetalheGestaoQueryKey = (id?: string) =>
+  ['ocorrencia-detalhe-gestao', id] as const;
+
+export function useOcorrenciaDetalheGestao(id?: string) {
+  const enabled = Boolean(id);
+  return useQuery<OcorrenciaDetalheGestao | null>({
+    queryKey: ocorrenciaDetalheGestaoQueryKey(id),
+    queryFn: () => isSupabaseConfigured
+      ? fetchOcorrenciaDetalheGestao(id!)
+      : Promise.resolve(null),
+    enabled,
+    staleTime: 30_000,
+    retry: 1,
+  });
+}
+
+export const ocorrenciaDetalheGestaoPorPontoQueryKey = (pontoId?: string) =>
+  ['ocorrencia-detalhe-gestao-por-ponto', pontoId] as const;
+
+export function useOcorrenciaDetalheGestaoPorPonto(pontoId?: string) {
+  const enabled = Boolean(pontoId);
+  return useQuery<OcorrenciaDetalheGestao | null>({
+    queryKey: ocorrenciaDetalheGestaoPorPontoQueryKey(pontoId),
+    queryFn: () => isSupabaseConfigured
+      ? fetchOcorrenciaDetalheGestaoPorPonto(pontoId!)
+      : Promise.resolve(null),
+    enabled,
+    staleTime: 30_000,
+    retry: 1,
+  });
+}
+
+export const evidenciasAssinadasQueryKey = (ocorrenciaId: string, paths: string[]) =>
+  ['ocorrencia-evidencias-assinadas', ocorrenciaId, paths] as const;
+
+export function useEvidenciasAssinadas(ocorrenciaId: string, paths: string[]) {
+  return useQuery({
+    queryKey: evidenciasAssinadasQueryKey(ocorrenciaId, paths),
+    queryFn: () => fetchEvidenciasAssinadas(paths),
+    enabled: Boolean(ocorrenciaId && paths.length),
+    staleTime: 8 * 60 * 1000,
+    retry: 1,
   });
 }
 
