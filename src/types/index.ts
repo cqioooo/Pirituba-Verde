@@ -49,7 +49,23 @@ export type {
   DetalheDenuncia,
   OcorrenciaDetalheGestao,
   EvidenciaAssinada,
+  PontosGestorFiltros,
 } from './database';
+
+// Moderação da gestão (KAN-79 / F4.3)
+export type {
+  AcaoModeracao,
+  ExecutarAcaoModeracaoParams,
+  ExecutarAcaoModeracaoInput,
+  ResultadoAcaoModeracao,
+  CodigoErroModeracao,
+  EtapaAcaoModeracao,
+  ContextoOcorrenciaModeracao,
+  ItemFilaModeracao,
+  ConfiguracaoAlertaPrazo,
+  NivelAlertaPrazo,
+  AlertaPrazo,
+} from './moderacao';
 export { EMPTY_REPORT_DRAFT, classificarCriticidade } from './database';
 
 // Presentation labels and colors
@@ -59,6 +75,7 @@ export {
   POINT_STATUS_LABELS,
   POINT_STATUS_VARIANTS,
   OCORRENCIA_STATUS_LABELS,
+  OCORRENCIA_STATUS_VARIANTS,
   FREQUENCY_LABELS,
   VOLUME_LABELS,
   TIME_LABELS,

@@ -55,10 +55,10 @@ export function GestaoSidebar({ onClose }: GestaoSidebarProps) {
             onClick={onClose}
             className={({ isActive }) =>
               cn(
-                'group flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                'group flex min-h-11 items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-surface-200/50 text-surface-900 font-semibold'
-                  : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
+                  : 'text-surface-700 hover:bg-surface-100 hover:text-surface-900'
               )
             }
           >
@@ -83,10 +83,10 @@ export function GestaoSidebar({ onClose }: GestaoSidebarProps) {
       </nav>
 
       {/* Footer Actions */}
-      <div className="border-t border-surface-800 p-4">
+      <div className="border-t border-surface-200 p-4">
         <button
           onClick={handleLogout}
-          className="group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-100 hover:text-danger-600"
+          className="group flex min-h-11 w-full items-center rounded-md px-3 py-2 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-100 hover:text-danger-700"
         >
           <SignOut className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
           Sair do sistema

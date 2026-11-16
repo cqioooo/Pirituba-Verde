@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { useReverseGeocode } from '@/hooks/useReverseGeocode';
+import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from '@/lib/mapTiles';
 import { Spinner } from '@/components/ui';
 import { PIRITUBA_CENTER, DETAIL_ZOOM } from '@/types';
 import { MapPin, NavigationArrow } from '@phosphor-icons/react';
@@ -23,7 +25,9 @@ const pinIcon = L.divIcon({
 interface LocationStepProps {
   latitude: number;
   longitude: number;
+  endereco?: string;
   onLocationChange: (lat: number, lng: number) => void;
+  onAddressChange?: (endereco: string, bairro: string) => void;
 }
 
 /** Inner component that handles map click events */
@@ -51,8 +55,29 @@ function FlyToPosition({ position }: { position: [number, number] }) {
   return null;
 }
 
-export function LocationStep({ latitude, longitude, onLocationChange }: LocationStepProps) {
+export function LocationStep({
+  latitude,
+  longitude,
+  endereco = '',
+  onLocationChange,
+  onAddressChange,
+}: LocationStepProps) {
   const geo = useGeolocation();
+  const { resultado: geocodeResultado, loading: geocodeLoading } = useReverseGeocode(
+    latitude,
+    longitude
+  );
+
+  const lastSyncedAddressRef = useRef<string>('');
+
+  // Sync automatically determined address back to parent draft
+  useEffect(() => {
+    if (!geocodeResultado || !onAddressChange) return;
+    const key = `${geocodeResultado.endereco}|${geocodeResultado.bairro ?? ''}`;
+    if (lastSyncedAddressRef.current === key) return;
+    lastSyncedAddressRef.current = key;
+    onAddressChange(geocodeResultado.endereco, geocodeResultado.bairro ?? '');
+  }, [geocodeResultado, onAddressChange]);
 
   const hasSelectedLocation = latitude !== 0 && longitude !== 0;
   const mapCenter: [number, number] = hasSelectedLocation
@@ -113,8 +138,8 @@ export function LocationStep({ latitude, longitude, onLocationChange }: Location
           zoomControl={true}
         >
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            attribution={MAP_TILE_ATTRIBUTION}
+            url={MAP_TILE_URL}
           />
           <MapClickHandler onLocationChange={onLocationChange} />
           {hasSelectedLocation && (
@@ -126,13 +151,41 @@ export function LocationStep({ latitude, longitude, onLocationChange }: Location
         </MapContainer>
       </div>
 
-      {/* Selected coordinates */}
+      {/* Auto-resolved address + coordinates */}
       {hasSelectedLocation && (
-        <div className="flex items-center gap-2 text-xs text-surface-500 bg-surface-50 rounded-lg px-3 py-2">
-          <MapPin className="w-3.5 h-3.5 text-primary-500" />
-          <span>
-            Coordenadas: {latitude.toFixed(5)}, {longitude.toFixed(5)}
-          </span>
+        <div className="space-y-2 rounded-lg border border-surface-200 bg-surface-50 px-3.5 py-2.5 text-xs">
+          <div className="flex items-start gap-2">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" />
+            <div className="min-w-0 flex-1 space-y-1">
+              <p className="font-medium text-surface-900">
+                {geocodeLoading
+                  ? 'Identificando endereço aproximado...'
+                  : endereco.trim()
+                    ? endereco
+                    : 'Endereço indisponível (serão usadas as coordenadas)'}
+              </p>
+              <p className="text-[11px] text-surface-500">
+                Coordenadas: {latitude.toFixed(5)}, {longitude.toFixed(5)}
+              </p>
+            </div>
+          </div>
+          {onAddressChange && (
+            <div>
+              <label htmlFor="endereco-denuncia" className="sr-only">
+                Endereço aproximado
+              </label>
+              <input
+                id="endereco-denuncia"
+                type="text"
+                value={endereco}
+                onChange={(event) =>
+                  onAddressChange(event.target.value, geocodeResultado?.bairro ?? '')
+                }
+                placeholder="Ajustar rua / referência se necessário"
+                className="w-full rounded-md border border-surface-200 bg-white px-2.5 py-1.5 text-xs text-surface-800 placeholder:text-surface-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

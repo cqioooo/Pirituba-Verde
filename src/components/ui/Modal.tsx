@@ -15,20 +15,29 @@ interface ModalProps {
 export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'md' }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Fecha com ESC
+  // Fecha com ESC e gerencia foco previsível
   useEffect(() => {
+    if (!isOpen) return;
+
+    const elementoAnterior =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
+      if (e.key === 'Escape') onClose();
     };
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden'; // Evita scroll do body
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    const primeiroFocavel = modalRef.current?.querySelector<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
+    );
+    primeiroFocavel?.focus();
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
+      if (elementoAnterior && document.contains(elementoAnterior)) {
+        elementoAnterior.focus();
+      }
     };
   }, [isOpen, onClose]);
 
@@ -71,11 +80,12 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'md
             {title}
           </h2>
           <button
+            type="button"
             onClick={onClose}
-            className="text-surface-400 hover:text-surface-600 transition-colors p-1 -mr-1 rounded-full hover:bg-surface-100"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-surface-600 transition-colors hover:bg-surface-100 hover:text-surface-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 -mr-2"
             aria-label="Fechar modal"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 

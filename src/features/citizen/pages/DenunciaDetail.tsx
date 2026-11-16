@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { useDetalheDenuncia, useEvidenciasAssinadas } from '@/services/queries';
 import { Badge, Button } from '@/components/ui';
 import {

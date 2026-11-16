@@ -1,6 +1,6 @@
 import { POINT_STATUS_LABELS, WASTE_CATEGORY_LABELS, classificarCriticidade } from '@/types';
 import type { PontoGestor } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { formatarDataCurta } from '@/lib/moderacao';
 import { X, MapPin, WarningCircle, Check } from '@phosphor-icons/react';
 import { Button, Badge } from '@/components/ui';
 import { CriticidadeBadge } from './CriticidadeBadge';
@@ -84,13 +84,17 @@ export function MapSidePanel({ ponto, onClose }: MapSidePanelProps) {
           <div className="flex justify-between border-b border-surface-100 pb-2">
             <span className="text-surface-500">Primeiro registro</span>
             <span className="text-surface-900 font-medium">
-              {ponto.data_primeira_ocorrencia ? formatDate(ponto.data_primeira_ocorrencia) : '-'}
+              {ponto.data_primeira_ocorrencia
+                ? (formatarDataCurta(ponto.data_primeira_ocorrencia) ?? 'Data indisponível')
+                : '-'}
             </span>
           </div>
           <div className="flex justify-between border-b border-surface-100 pb-2">
             <span className="text-surface-500">Último registro</span>
             <span className="text-surface-900 font-medium">
-              {ponto.data_ultima_ocorrencia ? formatDate(ponto.data_ultima_ocorrencia) : '-'}
+              {ponto.data_ultima_ocorrencia
+                ? (formatarDataCurta(ponto.data_ultima_ocorrencia) ?? 'Data indisponível')
+                : '-'}
             </span>
           </div>
         </div>

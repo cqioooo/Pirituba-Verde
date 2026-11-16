@@ -37,7 +37,7 @@ export function FormStep({ draft, onChange, errors }: FormStepProps) {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      onChange('photos', [...draft.photos, ...newFiles]);
+      onChange('photos', [...draft.photos, ...newFiles].slice(0, 3));
     }
   };
 
@@ -176,37 +176,46 @@ export function FormStep({ draft, onChange, errors }: FormStepProps) {
 
       {/* Photos */}
       <div>
-        <FieldLabel label="Fotos (opcional, máximo 3)" />
+        <FieldLabel label="Fotos comprobatórias (mínimo 2, máximo 3)" required />
+        <p className="text-xs text-surface-500 mb-2">
+          Formatos JPEG, PNG ou WebP até 5 MB ({draft.photos.length}/3 anexadas).
+        </p>
         {draft.photos.length > 0 && (
           <div className="flex flex-wrap gap-3 mb-3">
             {draft.photos.map((photo, idx) => (
               <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-surface-200 shadow-sm">
-                <img src={URL.createObjectURL(photo)} alt="Preview" className="w-full h-full object-cover" />
+                <img src={URL.createObjectURL(photo)} alt={`Prévia da foto ${idx + 1}`} className="w-full h-full object-cover" />
                 <button
                   type="button"
+                  aria-label={`Remover foto ${idx + 1}`}
                   onClick={() => removePhoto(idx)}
-                  className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
+                  className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
           </div>
         )}
-        
+
         {draft.photos.length < 3 && (
           <label className="cursor-pointer border-2 border-dashed border-surface-200 rounded-lg p-6 text-center bg-surface-50/50 hover:bg-surface-50 hover:border-primary-300 transition-colors block">
-            <input 
-              type="file" 
-              accept="image/*" 
-              multiple 
-              className="hidden" 
-              onChange={handlePhotoUpload} 
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="hidden"
+              onChange={handlePhotoUpload}
             />
             <Camera className="w-8 h-8 text-surface-400 hover:text-primary-500 transition-colors mx-auto mb-2" />
-            <p className="text-xs text-surface-600 font-medium">Toque para anexar fotos</p>
+            <p className="text-xs text-surface-600 font-medium">
+              Toque para anexar fotos ({Math.max(0, 2 - draft.photos.length) > 0
+                ? `faltam ${2 - draft.photos.length}`
+                : 'opcional adicionar mais 1'})
+            </p>
           </label>
         )}
+        <FieldError error={errors.photos} />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { PontoAutenticado } from '@/types';
 import { WASTE_CATEGORY_LABELS, WASTE_CATEGORY_COLORS, POINT_STATUS_LABELS, POINT_STATUS_VARIANTS } from '@/types';
 import { Badge, Button } from '@/components/ui';
@@ -33,6 +34,7 @@ function eventIcon(type: string) {
 export function PointDetail({ point }: PointDetailProps) {
   const location = useLocation();
   const isGestorArea = location.pathname.startsWith('/gestao');
+  const [referenciaMs] = useState(() => Date.now());
 
   const { data: events = [] } = useHistoricoPonto(point.id);
   
@@ -41,6 +43,18 @@ export function PointDetail({ point }: PointDetailProps) {
   const label = WASTE_CATEGORY_LABELS[categoria] || 'Misto';
 
   const isResolvido = point.status === 'resolvido' || point.status === 'arquivado' || point.status === 'invalido' || point.status === 'cancelado';
+  const isEmConfirmacao = point.status === 'em_confirmacao';
+  const eventoResolvido = events.find((event) => event.status_novo === 'resolvido');
+  const dataResolucaoRef = eventoResolvido?.created_at ?? (point.status === 'resolvido' ? point.updated_at : null);
+  const diasDesdeResolucao = dataResolucaoRef
+    ? Math.floor((referenciaMs - new Date(dataResolucaoRef).getTime()) / (24 * 60 * 60 * 1000))
+    : null;
+  const dentroJanelaContestacao =
+    point.status === 'resolvido' &&
+    diasDesdeResolucao !== null &&
+    Number.isFinite(diasDesdeResolucao) &&
+    diasDesdeResolucao >= 0 &&
+    diasDesdeResolucao <= 30;
 
   return (
     <div className="space-y-4 py-2">
@@ -126,14 +140,34 @@ export function PointDetail({ point }: PointDetailProps) {
       {/* CTA */}
       <div className="pt-2 border-t border-surface-100 space-y-3">
         {!isResolvido && (
-          <ConfirmButton pontoId={point.id} />
+          <ConfirmButton
+            pontoId={point.id}
+            pontoLatitude={point.latitude}
+            pontoLongitude={point.longitude}
+          />
         )}
-        
-        <Link to={`/app/nova-denuncia?pointId=${point.id}`} className="block">
-          <Button variant={isResolvido ? "primary" : "outline"} fullWidth size="sm" icon={<CaretRight className="w-4 h-4" />}>
-            Nova denúncia neste local
-          </Button>
-        </Link>
+
+        {isEmConfirmacao && (
+          <Link to={`/app/nova-denuncia?pointId=${point.id}&modo=renovacao`} className="block">
+            <Button variant="outline" fullWidth size="sm" icon={<CaretRight className="w-4 h-4" />} className="min-h-11">
+              Renovar registro com nova foto
+            </Button>
+          </Link>
+        )}
+
+        {dentroJanelaContestacao ? (
+          <Link to={`/app/nova-denuncia?pointId=${point.id}&modo=contestacao`} className="block">
+            <Button variant="primary" fullWidth size="sm" icon={<CaretRight className="w-4 h-4" />} className="min-h-11">
+              Contestar resolução (prazo de 30 dias)
+            </Button>
+          </Link>
+        ) : (
+          <Link to={`/app/nova-denuncia?pointId=${point.id}`} className="block">
+            <Button variant={isResolvido ? "primary" : "outline"} fullWidth size="sm" icon={<CaretRight className="w-4 h-4" />} className="min-h-11">
+              {point.status === 'resolvido' ? 'Registrar reincidência neste local' : 'Nova denúncia neste local'}
+            </Button>
+          </Link>
+        )}
         <p className="text-[10px] text-surface-400 text-center">
           Atualizado em {formatDate(point.updated_at)}
         </p>

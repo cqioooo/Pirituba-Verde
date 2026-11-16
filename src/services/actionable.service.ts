@@ -59,12 +59,11 @@ function pontoToContextItem(p: PontoGestor): ContextResultItem {
 // Ranking Acionável
 // ═══════════════════════════════════════════════
 
-export async function getActionableRanking(_periodo: string): Promise<ActionableItem[]> {
+export async function getActionableRanking(): Promise<ActionableItem[]> {
   const points = await fetchAllActivePoints();
   if (points.length === 0) return [];
 
   const items: ActionableItem[] = [];
-  let actionId = 0;
 
   // 1. Pontos críticos individuais (criticidade >= 75) — top 3
   const criticalPoints = points
@@ -73,7 +72,7 @@ export async function getActionableRanking(_periodo: string): Promise<Actionable
 
   for (const p of criticalPoints) {
     items.push({
-      id: `action-${++actionId}`,
+      id: `action-${items.length + 1}`,
       kind: 'point',
       title: `Ponto ${p.id.split('-')[0]} exige atenção imediata`,
       subtitle: `Criticidade ${critLabel(p.criticidade).toLowerCase()}, ${p.recorrente ? 'recorrente' : 'pontual'}.`,
@@ -93,7 +92,7 @@ export async function getActionableRanking(_periodo: string): Promise<Actionable
   const topBairro = Object.entries(bairroCount).sort((a, b) => b[1] - a[1])[0];
   if (topBairro) {
     items.push({
-      id: `action-${++actionId}`,
+      id: `action-${items.length + 1}`,
       kind: 'group',
       title: `${topBairro[0]} concentra pontos no período`,
       subtitle: 'O bairro registrou maior concentração de pontos ativos.',
@@ -114,7 +113,7 @@ export async function getActionableRanking(_periodo: string): Promise<Actionable
   if (topCat && points.length > 0) {
     const pct = Math.round((topCat[1] / points.length) * 100);
     items.push({
-      id: `action-${++actionId}`,
+      id: `action-${items.length + 1}`,
       kind: 'group',
       title: `${topCat[0]} lidera os registros ativos`,
       subtitle: 'A categoria continua dominante entre os pontos do período.',
@@ -130,7 +129,7 @@ export async function getActionableRanking(_periodo: string): Promise<Actionable
   const emConfirmacao = points.filter(p => p.status === 'em_confirmacao');
   if (emConfirmacao.length > 0) {
     items.push({
-      id: `action-${++actionId}`,
+      id: `action-${items.length + 1}`,
       kind: 'group',
       title: 'Pontos em confirmação aguardam validação',
       subtitle: `${emConfirmacao.length} pontos aguardam validação da comunidade.`,
@@ -146,7 +145,7 @@ export async function getActionableRanking(_periodo: string): Promise<Actionable
   const recurrents = points.filter(p => p.recorrente);
   if (recurrents.length > 0) {
     items.push({
-      id: `action-${++actionId}`,
+      id: `action-${items.length + 1}`,
       kind: 'group',
       title: 'Pontos recorrentes concentrados',
       subtitle: `${recurrents.length} pontos com histórico de reincidência.`,
@@ -166,7 +165,7 @@ export async function getActionableRanking(_periodo: string): Promise<Actionable
     const days = Math.floor((Date.now() - new Date(oldestPoint.data_primeira_ocorrencia!).getTime()) / (1000 * 60 * 60 * 24));
     if (days > 14) {
       items.push({
-        id: `action-${++actionId}`,
+        id: `action-${items.length + 1}`,
         kind: 'point',
         title: `${oldestPoint.id.split('-')[0]} acumula ${days} dias ativo`,
         subtitle: `${oldestPoint.categoria_principal || 'Descarte'} em ${oldestPoint.bairro || 'bairro desconhecido'}.`,
@@ -197,12 +196,11 @@ function buildPointReason(p: PontoGestor): string {
 // Insights Curtos
 // ═══════════════════════════════════════════════
 
-export async function getActionableInsights(_periodo: string): Promise<InsightItem[]> {
+export async function getActionableInsights(): Promise<InsightItem[]> {
   const points = await fetchAllActivePoints();
   if (points.length === 0) return [];
 
   const insights: InsightItem[] = [];
-  let insightId = 0;
 
   const recurrents = points.filter(p => p.recorrente);
   const criticals = points.filter(p => (p.criticidade ?? 0) >= 75);
@@ -211,7 +209,7 @@ export async function getActionableInsights(_periodo: string): Promise<InsightIt
   if (recurrents.length > 0) {
     const recRate = Math.round((recurrents.length / points.length) * 100);
     insights.push({
-      id: `insight-${++insightId}`,
+      id: `insight-${insights.length + 1}`,
       category: 'reincidencia',
       priority: recRate > 25 ? 'high' : 'medium',
       text: `${recRate}% dos pontos ativos são recorrentes (${recurrents.length} de ${points.length}).`,
@@ -227,7 +225,7 @@ export async function getActionableInsights(_periodo: string): Promise<InsightIt
   const topCat = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0];
   if (topCat) {
     insights.push({
-      id: `insight-${++insightId}`,
+      id: `insight-${insights.length + 1}`,
       category: 'categoria_residuo',
       priority: 'high',
       text: `${topCat[0]} é o tipo de descarte mais comum entre os pontos ativos (${topCat[1]} pontos).`,
@@ -244,7 +242,7 @@ export async function getActionableInsights(_periodo: string): Promise<InsightIt
     const topCritBairro = Object.entries(critBairros).sort((a, b) => b[1] - a[1])[0];
     if (topCritBairro) {
       insights.push({
-        id: `insight-${++insightId}`,
+        id: `insight-${insights.length + 1}`,
         category: 'criticidade',
         priority: 'medium',
         text: `A maior parte dos pontos críticos está concentrada em ${topCritBairro[0]} (${topCritBairro[1]} pontos).`,
@@ -262,7 +260,7 @@ export async function getActionableInsights(_periodo: string): Promise<InsightIt
   if (topHorario && points.length > 0) {
     const pct = Math.round((topHorario[1] / points.length) * 100);
     insights.push({
-      id: `insight-${++insightId}`,
+      id: `insight-${insights.length + 1}`,
       category: 'horario',
       priority: 'medium',
       text: `Os registros indicam maior atividade no período "${topHorario[0]}" (${pct}% dos pontos).`,
@@ -273,7 +271,7 @@ export async function getActionableInsights(_periodo: string): Promise<InsightIt
   const emConfirmacao = points.filter(p => p.status === 'em_confirmacao');
   if (emConfirmacao.length > 0) {
     insights.push({
-      id: `insight-${++insightId}`,
+      id: `insight-${insights.length + 1}`,
       category: 'status_operacional',
       priority: 'low',
       text: `${emConfirmacao.length} pontos aguardam confirmação da comunidade.`,
@@ -315,7 +313,7 @@ export async function getContextResults(target: ActionableTarget): Promise<Conte
 
   // Grupo
   const allActive = await fetchAllActivePoints();
-  let filtered: PontoGestor[] = [];
+  let filtered: PontoGestor[];
   const key = target.filterKey;
   const val = target.filterValue;
 

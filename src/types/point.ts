@@ -35,7 +35,7 @@ export const WASTE_CATEGORY_COLORS: Record<string, string> = {
 
 export const POINT_STATUS_LABELS: Record<StatusPonto, string> = {
   novo: 'Novo',
-  em_confirmacao: 'Aguardando',
+  em_confirmacao: 'Em confirmação',
   confirmado: 'Confirmado',
   em_analise: 'Em análise',
   encaminhado: 'Encaminhado',
@@ -67,9 +67,18 @@ export const OCORRENCIA_STATUS_LABELS: Record<string, string> = {
   arquivada: 'Arquivada',
 };
 
+export const OCORRENCIA_STATUS_VARIANTS: Record<string, 'info' | 'warning' | 'success' | 'danger' | 'neutral'> = {
+  pendente: 'warning',
+  em_revisao: 'info',
+  aprovada: 'success',
+  rejeitada: 'danger',
+  arquivada: 'neutral',
+};
+
 // ── Frequência percebida ──
 
 export const FREQUENCY_LABELS: Record<string, string> = {
+  unica: 'Ocorrência única',
   primeira_vez: 'Primeira vez',
   ocasional: 'Ocasional',
   semanal: 'Semanal',

@@ -76,6 +76,22 @@ export function SettingsPage() {
               disabled
               hint="Adição de ruído aleatório nas coordenadas públicas."
             />
+            <Input
+              label="Dias de Alerta de Prazo"
+              value={
+                configs?.alerta_prazo_dias?.length
+                  ? configs.alerta_prazo_dias.join(', ')
+                  : 'Desativado'
+              }
+              disabled
+              hint="Dias do ciclo configurados para destacar alertas visuais de vencimento."
+            />
+            <Input
+              label="Ciclo de Resolução (dias)"
+              value={configs?.prazo_ciclo_dias ?? ''}
+              disabled
+              hint="Duração de referência do ciclo para cálculo dos alertas sobre o prazo."
+            />
           </div>
         </Card>
       )}

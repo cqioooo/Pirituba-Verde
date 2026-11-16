@@ -7,7 +7,7 @@ import {
   Plus,
   Warning,
 } from '@phosphor-icons/react';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { useOcorrenciasUsuario } from '@/services/queries';
 import {
   WASTE_CATEGORY_LABELS,

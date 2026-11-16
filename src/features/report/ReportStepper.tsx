@@ -90,9 +90,15 @@ export function ReportStepper({
       </div>
 
       {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-surface-100 flex items-center justify-between gap-3 z-[100] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] md:static md:p-0 md:pt-4 md:mt-4 md:shadow-none safe-area-pb">
+      <div className="mt-6 pt-4 border-t border-surface-100 flex items-center justify-between gap-3">
         {showBack && currentStep > 0 ? (
-          <Button variant="ghost" size="sm" onClick={onBack} icon={<ArrowLeft className="w-4 h-4" />}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            icon={<ArrowLeft className="w-4 h-4" />}
+            className="min-h-11"
+          >
             Voltar
           </Button>
         ) : (
@@ -106,6 +112,7 @@ export function ReportStepper({
             disabled={nextDisabled}
             loading={nextLoading}
             icon={currentStep === steps.length - 1 ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+            className="min-h-11"
           >
             {nextLabel}
           </Button>

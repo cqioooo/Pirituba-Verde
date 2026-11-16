@@ -1,4 +1,4 @@
-import { formatDate } from '@/lib/utils';
+import { formatarDataCurta } from '@/lib/moderacao';
 import { POINT_STATUS_LABELS } from '@/types';
 import type { HistoricoStatusPonto } from '@/types';
 import { CheckCircle, Clock, XCircle, WarningCircle } from '@phosphor-icons/react';
@@ -61,7 +61,9 @@ export function StatusTimeline({ historico }: StatusTimelineProps) {
                     )}
                   </div>
                   <div className="whitespace-nowrap text-right text-sm text-surface-500">
-                    <time dateTime={item.created_at}>{formatDate(item.created_at)}</time>
+                    <time dateTime={item.created_at}>
+                      {formatarDataCurta(item.created_at) ?? 'Data indisponível'}
+                    </time>
                   </div>
                 </div>
               </div>

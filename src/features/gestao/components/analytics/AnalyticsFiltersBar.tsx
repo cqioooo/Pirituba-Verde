@@ -9,12 +9,12 @@ interface AnalyticsFiltersBarProps {
 
 export function AnalyticsFiltersBar({ filters, setFilters }: AnalyticsFiltersBarProps) {
   
-  const handlePeriodChange = (val: string) => {
-    setFilters({ ...filters, periodo: val as any });
+  const handlePeriodChange = (val: AnalyticsFilters['periodo']) => {
+    setFilters({ ...filters, periodo: val });
   };
 
-  const handleRecurrenteChange = (val: string) => {
-    setFilters({ ...filters, recorrente: val as any });
+  const handleRecurrenteChange = (val: AnalyticsFilters['recorrente']) => {
+    setFilters({ ...filters, recorrente: val });
   };
 
   const clearFilters = () => {
@@ -36,7 +36,7 @@ export function AnalyticsFiltersBar({ filters, setFilters }: AnalyticsFiltersBar
         <Select
           label="Período"
           value={filters.periodo}
-          onChange={(e) => handlePeriodChange(e.target.value)}
+          onChange={(e) => handlePeriodChange(e.target.value as AnalyticsFilters['periodo'])}
           options={[
             { label: 'Hoje', value: 'hoje' },
             { label: 'Últimos 7 dias', value: '7d' },
@@ -47,7 +47,7 @@ export function AnalyticsFiltersBar({ filters, setFilters }: AnalyticsFiltersBar
         <Select
           label="Recorrente"
           value={filters.recorrente}
-          onChange={(e) => handleRecurrenteChange(e.target.value)}
+          onChange={(e) => handleRecurrenteChange(e.target.value as AnalyticsFilters['recorrente'])}
           options={[
             { label: 'Todos', value: 'todos' },
             { label: 'Sim', value: 'sim' },

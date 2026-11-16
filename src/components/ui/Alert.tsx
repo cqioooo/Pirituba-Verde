@@ -13,26 +13,26 @@ interface AlertProps extends HTMLAttributes<HTMLDivElement> {
 const config: Record<AlertVariant, { bg: string; border: string; text: string; icon: ReactNode }> = {
   info: {
     bg: 'bg-info-50',
-    border: 'border-info-500/20',
-    text: 'text-info-500',
+    border: 'border-info-500/30',
+    text: 'text-info-700',
     icon: <Info className="w-5 h-5" />,
   },
   success: {
     bg: 'bg-success-50',
-    border: 'border-success-500/20',
-    text: 'text-success-500',
+    border: 'border-success-500/30',
+    text: 'text-success-700',
     icon: <CheckCircle className="w-5 h-5" />,
   },
   warning: {
     bg: 'bg-warning-50',
-    border: 'border-warning-500/20',
-    text: 'text-warning-500',
+    border: 'border-warning-500/30',
+    text: 'text-warning-700',
     icon: <Warning className="w-5 h-5" />,
   },
   error: {
     bg: 'bg-danger-50',
-    border: 'border-danger-500/20',
-    text: 'text-danger-500',
+    border: 'border-danger-500/30',
+    text: 'text-danger-700',
     icon: <WarningCircle className="w-5 h-5" />,
   },
 };
@@ -54,7 +54,7 @@ export function Alert({ variant = 'info', title, children, className, ...props }
       <span className={cn('shrink-0 mt-0.5', text)} aria-hidden="true">
         {icon}
       </span>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         {title && (
           <p className={cn('text-sm font-semibold mb-1', text)}>{title}</p>
         )}

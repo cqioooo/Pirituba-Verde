@@ -1,15 +1,70 @@
+import type { ReactNode } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, Cell
 } from 'recharts';
 import { Spinner } from '@/components/ui';
+import type { DistributionData, RankingData, TimeSeriesData } from '@/types/analytics';
+
+interface ChartWrapperProps {
+  title: string;
+  subtitle?: string;
+  isLoading?: boolean;
+  isEmpty?: boolean;
+  children: ReactNode;
+}
+
+interface TimeSeriesChartProps {
+  data?: TimeSeriesData[];
+  isLoading?: boolean;
+}
+
+interface DistributionChartProps {
+  data?: DistributionData[];
+  isLoading?: boolean;
+}
+
+interface InteractiveDistributionChartProps extends DistributionChartProps {
+  onBarClick?: (payload: DistributionData) => void;
+}
+
+interface RankingChartProps {
+  data?: RankingData[];
+  isLoading?: boolean;
+}
+
+function handleDistributionBarClick(
+  activeTooltipIndex: number | string | null | undefined,
+  activeLabel: string | number | undefined,
+  data: DistributionData[] | undefined,
+  onBarClick?: (payload: DistributionData) => void,
+) {
+  if (!onBarClick || !data?.length) return;
+
+  const idx =
+    typeof activeTooltipIndex === 'number'
+      ? activeTooltipIndex
+      : typeof activeTooltipIndex === 'string'
+        ? Number(activeTooltipIndex)
+        : NaN;
+
+  if (Number.isInteger(idx) && idx >= 0 && idx < data.length) {
+    onBarClick(data[idx]);
+    return;
+  }
+
+  if (activeLabel !== undefined) {
+    const matched = data.find((entry) => entry.label === String(activeLabel));
+    if (matched) onBarClick(matched);
+  }
+}
 
 // Paleta de cores para os status
 const STATUS_COLORS: Record<string, string> = {
   'novo': '#F59E0B',
   'em confirmacao': '#3B82F6',
   'confirmado': '#10B981',
-  'em analise': '#8B5CF6',
+  'em analise': '#8B8CF6',
   'encaminhado': '#6366F1',
   'resolvido': '#14B8A6',
   'invalido': '#EF4444',
@@ -24,7 +79,7 @@ const CRIT_COLORS: Record<string, string> = {
   'Crítica': '#8b2e2e',
 };
 
-export function ChartWrapper({ title, subtitle, isLoading, isEmpty, children }: any) {
+export function ChartWrapper({ title, subtitle, isLoading, isEmpty, children }: ChartWrapperProps) {
   return (
     <div className="flex flex-col h-80 py-6">
       <div className="mb-4">
@@ -49,7 +104,7 @@ export function ChartWrapper({ title, subtitle, isLoading, isEmpty, children }: 
 }
 
 // 1. Evolução de novos pontos no tempo
-export function NewPointsTimeSeriesChart({ data, isLoading }: any) {
+export function NewPointsTimeSeriesChart({ data, isLoading }: TimeSeriesChartProps) {
   return (
     <ChartWrapper title="Evolução de Novos Pontos" subtitle="Surgimento ao longo do tempo" isLoading={isLoading} isEmpty={!data?.length}>
       <ResponsiveContainer width="100%" height="100%">
@@ -72,16 +127,23 @@ export function NewPointsTimeSeriesChart({ data, isLoading }: any) {
 }
 
 // 2. Distribuição operacional por status
-export function StatusDistributionChart({ data, isLoading, onBarClick }: any) {
+export function StatusDistributionChart({ data, isLoading, onBarClick }: InteractiveDistributionChartProps) {
   return (
     <ChartWrapper title="Distribuição por Status" subtitle="Situação atual dos pontos" isLoading={isLoading} isEmpty={!data?.length}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ left: 10 }} onClick={(e: any) => { if (e?.activePayload?.[0]) onBarClick?.(e.activePayload[0].payload); }}>
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ left: 10 }}
+          onClick={(state) =>
+            handleDistributionBarClick(state.activeTooltipIndex, state.activeLabel, data, onBarClick)
+          }
+        >
           <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
           <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} width={100} />
           <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
           <Bar dataKey="value" name="Quantidade" radius={[0, 4, 4, 0]} className="cursor-pointer">
-            {data?.map((entry: any, index: number) => (
+            {data?.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.label.toLowerCase()] || '#94A3B8'} />
             ))}
           </Bar>
@@ -92,11 +154,17 @@ export function StatusDistributionChart({ data, isLoading, onBarClick }: any) {
 }
 
 // 3. Resíduos por categoria
-export function CategoryDistributionChart({ data, isLoading, onBarClick }: any) {
+export function CategoryDistributionChart({ data, isLoading, onBarClick }: InteractiveDistributionChartProps) {
   return (
     <ChartWrapper title="Resíduos por Categoria" subtitle="Categorias mais frequentes" isLoading={isLoading} isEmpty={!data?.length}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ left: -20, bottom: 20 }} onClick={(e: any) => { if (e?.activePayload?.[0]) onBarClick?.(e.activePayload[0].payload); }}>
+        <BarChart
+          data={data}
+          margin={{ left: -20, bottom: 20 }}
+          onClick={(state) =>
+            handleDistributionBarClick(state.activeTooltipIndex, state.activeLabel, data, onBarClick)
+          }
+        >
           <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} dy={10} angle={-45} textAnchor="end" height={60} />
           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
           <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
@@ -108,11 +176,18 @@ export function CategoryDistributionChart({ data, isLoading, onBarClick }: any) 
 }
 
 // 4. Reincidência por bairro
-export function RecurrenceByNeighborhoodChart({ data, isLoading, onBarClick }: any) {
+export function RecurrenceByNeighborhoodChart({ data, isLoading, onBarClick }: InteractiveDistributionChartProps) {
   return (
     <ChartWrapper title="Reincidência por Bairro" subtitle="Onde o problema mais retorna" isLoading={isLoading} isEmpty={!data?.length}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ left: 10 }} onClick={(e: any) => { if (e?.activePayload?.[0]) onBarClick?.(e.activePayload[0].payload); }}>
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ left: 10 }}
+          onClick={(state) =>
+            handleDistributionBarClick(state.activeTooltipIndex, state.activeLabel, data, onBarClick)
+          }
+        >
           <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
           <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} width={100} />
           <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
@@ -124,7 +199,7 @@ export function RecurrenceByNeighborhoodChart({ data, isLoading, onBarClick }: a
 }
 
 // 5. Destaques de criticidade (Bar Chart)
-export function CriticalityHighlightsChart({ data, isLoading }: any) {
+export function CriticalityHighlightsChart({ data, isLoading }: RankingChartProps) {
   return (
     <ChartWrapper title="Destaques de Criticidade" subtitle="Pontos com maior score" isLoading={isLoading} isEmpty={!data?.length}>
       <ResponsiveContainer width="100%" height="100%">
@@ -140,7 +215,7 @@ export function CriticalityHighlightsChart({ data, isLoading }: any) {
 }
 
 // 6. Distribuição de criticidade
-export function CriticalityDistributionChart({ data, isLoading }: any) {
+export function CriticalityDistributionChart({ data, isLoading }: DistributionChartProps) {
   return (
     <ChartWrapper title="Distribuição de Criticidade" subtitle="Quantidade de pontos por nível" isLoading={isLoading} isEmpty={!data?.length}>
       <ResponsiveContainer width="100%" height="100%">
@@ -149,7 +224,7 @@ export function CriticalityDistributionChart({ data, isLoading }: any) {
           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
           <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
           <Bar dataKey="value" name="Pontos" radius={[4, 4, 0, 0]}>
-            {data?.map((entry: any, index: number) => (
+            {data?.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={CRIT_COLORS[entry.label] || '#94A3B8'} />
             ))}
           </Bar>
@@ -160,7 +235,7 @@ export function CriticalityDistributionChart({ data, isLoading }: any) {
 }
 
 // 7. Análise por dia da semana
-export function WeekdayAnalysisChart({ data, isLoading }: any) {
+export function WeekdayAnalysisChart({ data, isLoading }: DistributionChartProps) {
   return (
     <ChartWrapper title="Descarte por Dia da Semana" subtitle="Volume de registros ao longo da semana" isLoading={isLoading} isEmpty={!data?.length}>
       <ResponsiveContainer width="100%" height="100%">
@@ -176,7 +251,7 @@ export function WeekdayAnalysisChart({ data, isLoading }: any) {
 }
 
 // 8. Análise por faixa horária
-export function TimeRangeAnalysisChart({ data, isLoading }: any) {
+export function TimeRangeAnalysisChart({ data, isLoading }: DistributionChartProps) {
   return (
     <ChartWrapper title="Faixa Horária de Descarte" subtitle="Horários com mais incidência" isLoading={isLoading} isEmpty={!data?.length}>
       <ResponsiveContainer width="100%" height="100%">
@@ -192,7 +267,7 @@ export function TimeRangeAnalysisChart({ data, isLoading }: any) {
 }
 
 // 9. Análise mensal
-export function MonthlyAnalysisChart({ data, isLoading }: any) {
+export function MonthlyAnalysisChart({ data, isLoading }: TimeSeriesChartProps) {
   return (
     <ChartWrapper title="Análise Mensal" subtitle="Sazonalidade ao longo dos meses" isLoading={isLoading} isEmpty={!data?.length}>
       <ResponsiveContainer width="100%" height="100%">

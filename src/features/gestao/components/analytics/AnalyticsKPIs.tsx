@@ -1,7 +1,13 @@
 import { MapPin, Warning, CheckCircle, ClockCounterClockwise, Octagon, Trophy } from '@phosphor-icons/react';
+import type { KpiResponse } from '@/types/analytics';
 import { StatCard } from '../StatCard';
 
-export function AnalyticsKPIs({ data, isLoading }: any) {
+interface AnalyticsKPIsProps {
+  data?: KpiResponse;
+  isLoading?: boolean;
+}
+
+export function AnalyticsKPIs({ data, isLoading }: AnalyticsKPIsProps) {
   if (isLoading || !data) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-surface-200 border-y border-surface-200">

@@ -3,6 +3,7 @@ import { MapContainer, Marker, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import { MapPin, WarningCircle } from '@phosphor-icons/react';
 import { DETAIL_ZOOM } from '@/types';
+import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from '@/lib/mapTiles';
 
 interface OcorrenciaDetailMapProps {
   latitude: number | null | undefined;
@@ -58,8 +59,8 @@ export function OcorrenciaDetailMap({ latitude, longitude }: OcorrenciaDetailMap
           scrollWheelZoom={false}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution={MAP_TILE_ATTRIBUTION}
+            url={MAP_TILE_URL}
             eventHandlers={{
               tileerror: () => setTileError(true),
             }}

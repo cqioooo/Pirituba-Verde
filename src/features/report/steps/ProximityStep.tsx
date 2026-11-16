@@ -1,8 +1,12 @@
-import { useEffect } from 'react';
-import type { ProximityCheckResult } from '@/types';
+import { useEffect, useMemo } from 'react';
+import type { PontoAutenticado, PontoProximo, ProximityCheckResult } from '@/types';
 import { useProximityCheck } from '@/hooks/useProximityCheck';
+import { useReverseGeocode } from '@/hooks/useReverseGeocode';
+import { ehTermoPrefeituraOuSubprefeitura } from '@/lib/geocoding';
+import { usePontosAutenticados } from '@/services/queries';
+import { SignedEvidenceThumbnail } from '@/components/shared/SignedEvidenceThumbnail';
 import { Spinner, Badge } from '@/components/ui';
-import { CheckCircle, WarningCircle, MapPin } from '@phosphor-icons/react';
+import { CheckCircle, WarningCircle, MapPin, Image as ImageIcon } from '@phosphor-icons/react';
 import { WASTE_CATEGORY_COLORS, WASTE_CATEGORY_LABELS, POINT_STATUS_LABELS, POINT_STATUS_VARIANTS } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +17,141 @@ interface ProximityStepProps {
   onConfirmPoint: (pointId: string) => void;
   result: ProximityCheckResult | null;
   confirmingPointId: string | null;
+}
+
+interface NearbyPointMatchCardProps {
+  match: PontoProximo;
+  pontoInfo: PontoAutenticado | undefined;
+  selected: boolean;
+  onSelect: (pointId: string) => void;
+}
+
+function limparSemPrefeitura(valor: string | null | undefined): string | null {
+  const limpo = valor?.trim();
+  if (!limpo || ehTermoPrefeituraOuSubprefeitura(limpo)) return null;
+  return limpo;
+}
+
+function NearbyPointMatchCard({
+  match,
+  pontoInfo,
+  selected,
+  onSelect,
+}: NearbyPointMatchCardProps) {
+  const categoria = match.categoria_principal || pontoInfo?.categoria_principal || 'misto';
+  const color = WASTE_CATEGORY_COLORS[categoria] || WASTE_CATEGORY_COLORS.misto;
+  const label = WASTE_CATEGORY_LABELS[categoria] || 'Misto';
+  const distanciaArredondada = Math.round(match.distancia_metros);
+
+  const enderecoSalvo =
+    limparSemPrefeitura(match.endereco) || limparSemPrefeitura(pontoInfo?.endereco);
+  const bairroSalvo =
+    limparSemPrefeitura(match.bairro) || limparSemPrefeitura(pontoInfo?.bairro);
+
+  const { resultado: geocodeFallback } = useReverseGeocode(
+    !enderecoSalvo && pontoInfo ? pontoInfo.latitude : 0,
+    !enderecoSalvo && pontoInfo ? pontoInfo.longitude : 0
+  );
+
+  const enderecoExibido =
+    enderecoSalvo ||
+    geocodeFallback?.endereco ||
+    (bairroSalvo ? `Bairro ${bairroSalvo}` : null) ||
+    (pontoInfo
+      ? `Localização aproximada (${pontoInfo.latitude.toFixed(4)}, ${pontoInfo.longitude.toFixed(4)})`
+      : `Ponto próximo (~${distanciaArredondada} m do local indicado)`);
+
+  const bairroSecundario =
+    enderecoSalvo && bairroSalvo && !enderecoSalvo.toLowerCase().includes(bairroSalvo.toLowerCase())
+      ? bairroSalvo
+      : null;
+
+  const fotoPath = match.ultima_foto_url || pontoInfo?.ultima_foto_url || null;
+  const totalConfirmacoes = match.confirmacoes;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(match.id)}
+      aria-pressed={selected}
+      className={cn(
+        'w-full text-left overflow-hidden rounded-xl border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+        selected
+          ? 'border-primary-400 bg-primary-50/40 ring-1 ring-primary-300 shadow-sm'
+          : 'border-surface-200 bg-white hover:border-surface-300 hover:shadow-sm'
+      )}
+    >
+      {/* Foto em destaque */}
+      <div className="relative h-44 w-full bg-surface-100 border-b border-surface-100">
+        {fotoPath ? (
+          <SignedEvidenceThumbnail
+            contextId={match.id}
+            path={fotoPath}
+            alt={`Foto do ponto registrado em ${enderecoExibido}`}
+            className="h-full w-full object-cover"
+            fallbackClassName="h-full w-full"
+            showStatusLabel
+          />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 px-4 text-center text-surface-500">
+            <ImageIcon className="h-8 w-8 text-surface-400" aria-hidden="true" />
+            <span className="text-xs font-medium text-surface-600">
+              Foto do registro indisponível
+            </span>
+          </div>
+        )}
+
+        <span className="absolute top-2.5 right-2.5 rounded-full bg-surface-900/75 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-xs">
+          ~{distanciaArredondada} m
+        </span>
+      </div>
+
+      {/* Endereço em destaque + tipo de resíduo discreto (sem criticidade nem prefeitura/subprefeitura) */}
+      <div className="p-3.5 space-y-2.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2 min-w-0">
+            <MapPin className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-surface-900 leading-snug break-words">
+                {enderecoExibido}
+              </p>
+              {bairroSecundario && (
+                <p className="text-xs text-surface-500 mt-0.5 truncate">
+                  {bairroSecundario}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Badge variant={POINT_STATUS_VARIANTS[match.status]} className="text-[11px] shrink-0">
+            {POINT_STATUS_LABELS[match.status]}
+          </Badge>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-surface-100 text-xs text-surface-500">
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              className="w-2 h-2 rounded-full shrink-0 opacity-80"
+              style={{ backgroundColor: color }}
+              aria-hidden="true"
+            />
+            <span>Resíduo: {label}</span>
+          </span>
+
+          <span className="text-surface-500">
+            {totalConfirmacoes} {totalConfirmacoes === 1 ? 'confirmação' : 'confirmações'}
+          </span>
+        </div>
+
+        {selected && (
+          <div className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-2.5 py-1.5 text-xs font-medium text-primary-700 border border-primary-200">
+            <CheckCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Selecionado para confirmar este ponto (pula o formulário de nova denúncia)</span>
+          </div>
+        )}
+      </div>
+    </button>
+  );
 }
 
 export function ProximityStep({
@@ -27,6 +166,15 @@ export function ProximityStep({
     latitude,
     longitude,
   });
+  const { data: pontosAutenticados = [] } = usePontosAutenticados();
+
+  const pontosPorId = useMemo(() => {
+    const mapa = new Map<string, PontoAutenticado>();
+    for (const ponto of pontosAutenticados) {
+      mapa.set(ponto.id, ponto);
+    }
+    return mapa;
+  }, [pontosAutenticados]);
 
   // Update parent when result changes
   useEffect(() => {
@@ -44,48 +192,15 @@ export function ProximityStep({
     );
   }
 
-  const renderPointMatch = (match: typeof result.nearbyPoints[0]) => {
-    const categoria = match.categoria_principal || 'misto';
-    const color = WASTE_CATEGORY_COLORS[categoria] || WASTE_CATEGORY_COLORS.misto;
-    const label = WASTE_CATEGORY_LABELS[categoria] || 'Misto';
-    const selected = confirmingPointId === match.id;
-
-    return (
-      <div key={match.id} className="relative">
-        <button
-          onClick={() => onConfirmPoint(match.id)}
-          className={cn(
-            'w-full text-left rounded-lg border p-3 transition-all',
-            selected
-              ? 'border-primary-300 bg-primary-50/50 shadow-sm'
-              : 'border-surface-200 bg-white hover:border-surface-300 hover:shadow-sm'
-          )}
-        >
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: color }}
-              />
-              <span className="text-xs font-semibold text-surface-800 truncate">
-                {label}
-              </span>
-            </div>
-            <Badge variant={POINT_STATUS_VARIANTS[match.status]} className="text-[10px] shrink-0">
-              {POINT_STATUS_LABELS[match.status]}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3 text-[10px] text-surface-400 mt-2">
-            <span>{match.confirmacoes} confirmações</span>
-            {match.criticidade && <span>Criticidade {match.criticidade.toFixed(1)}</span>}
-          </div>
-        </button>
-        <span className="absolute top-2 right-2 text-[10px] bg-surface-100 text-surface-500 px-2 py-0.5 rounded-full">
-          {Math.round(match.distancia_metros)}m
-        </span>
-      </div>
-    );
-  };
+  const renderPointMatch = (match: PontoProximo) => (
+    <NearbyPointMatchCard
+      key={match.id}
+      match={match}
+      pontoInfo={pontosPorId.get(match.id)}
+      selected={confirmingPointId === match.id}
+      onSelect={onConfirmPoint}
+    />
+  );
 
   // Cenário 1: ponto dentro do raio de confirmação
   if (result.scenario === 'confirmar') {

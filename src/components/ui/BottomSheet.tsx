@@ -17,25 +17,17 @@ const SNAP_POINTS = {
   full: 90,
 };
 
-export function BottomSheet({
-  open,
+function BottomSheetPanel({
   onClose,
   children,
   title,
   initialSnap = 'half',
-}: BottomSheetProps) {
+}: Omit<BottomSheetProps, 'open'>) {
   const [height, setHeight] = useState(SNAP_POINTS[initialSnap]);
   const [isDragging, setIsDragging] = useState(false);
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
-
-  // Reset height when opening
-  useEffect(() => {
-    if (open) {
-      setHeight(SNAP_POINTS[initialSnap]);
-    }
-  }, [open, initialSnap]);
 
   const handleDragStart = useCallback((clientY: number) => {
     setIsDragging(true);
@@ -95,16 +87,11 @@ export function BottomSheet({
     };
   }, [isDragging, handleDragMove, handleDragEnd]);
 
-  if (!open) return null;
-
   return (
     <>
       {/* Overlay */}
       <div
-        className={cn(
-          'fixed inset-0 z-[5900] bg-black/20 transition-opacity',
-          open ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}
+        className="fixed inset-0 z-[5900] bg-black/20 opacity-100 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -152,5 +139,26 @@ export function BottomSheet({
         </div>
       </div>
     </>
+  );
+}
+
+export function BottomSheet({
+  open,
+  onClose,
+  children,
+  title,
+  initialSnap = 'half',
+}: BottomSheetProps) {
+  if (!open) return null;
+
+  return (
+    <BottomSheetPanel
+      key={initialSnap}
+      onClose={onClose}
+      title={title}
+      initialSnap={initialSnap}
+    >
+      {children}
+    </BottomSheetPanel>
   );
 }

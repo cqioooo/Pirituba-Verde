@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from '@/lib/mapTiles';
 import { Button, Spinner } from '@/components/ui';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { AuthPointMarker } from '@/components/map/PointMarker';
@@ -18,11 +19,11 @@ import type { PontoAutenticado } from '@/types';
 import { Plus, List, X, Crosshair } from '@phosphor-icons/react';
 
 /** Helper component to fly to a position on the map */
-function FlyTo({ position, zoom }: { position: [number, number]; zoom: number }) {
+function FlyTo({ lat, lng, zoom, flyKey }: { lat: number; lng: number; zoom: number; flyKey?: number }) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(position, zoom, { duration: 0.8 });
-  }, [map, position, zoom]);
+    map.flyTo([lat, lng], zoom, { duration: 0.8 });
+  }, [map, lat, lng, zoom, flyKey]);
   return null;
 }
 
@@ -30,7 +31,7 @@ export function MapPage() {
   const { data: points = [], isLoading } = usePontosAutenticados();
   const [selectedPoint, setSelectedPoint] = useState<PontoAutenticado | null>(null);
   const [showList, setShowList] = useState(false);
-  const [flyTarget, setFlyTarget] = useState<{ pos: [number, number]; zoom: number } | null>(null);
+  const [flyTarget, setFlyTarget] = useState<{ pos: [number, number]; zoom: number; key: number } | null>(null);
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const { filters, toggleCategory, toggleStatus, resetFilters, hasActiveFilters, applyFilters } = useMapFilters();
@@ -42,7 +43,7 @@ export function MapPage() {
 
   const handleSelectPoint = useCallback((point: PontoAutenticado) => {
     setSelectedPoint(point);
-    setFlyTarget({ pos: [point.latitude, point.longitude], zoom: DETAIL_ZOOM });
+    setFlyTarget({ pos: [point.latitude, point.longitude], zoom: DETAIL_ZOOM, key: Date.now() });
 
     // On mobile, show bottom sheet
     if (!isDesktop) {
@@ -56,19 +57,17 @@ export function MapPage() {
 
   const handleLocateUser = useCallback(() => {
     if (geo.hasLocation) {
-      setFlyTarget({ pos: geo.effectiveCoords, zoom: DETAIL_ZOOM });
+      setFlyTarget({ pos: geo.effectiveCoords, zoom: DETAIL_ZOOM, key: Date.now() });
     } else {
       geo.requestLocation();
     }
   }, [geo]);
 
-  // When geo finishes loading, fly to user
-  useEffect(() => {
-    if (geo.hasLocation && geo.loading === false) {
-      setFlyTarget({ pos: geo.effectiveCoords, zoom: DETAIL_ZOOM });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geo.hasLocation]);
+  const activeFlyTarget =
+    flyTarget ??
+    (geo.hasLocation && !geo.loading
+      ? { pos: geo.effectiveCoords, zoom: DETAIL_ZOOM, key: 0 }
+      : null);
 
   // Scroll selected point into view in list
   useEffect(() => {
@@ -100,8 +99,8 @@ export function MapPage() {
           zoomControl={true}
         >
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            attribution={MAP_TILE_ATTRIBUTION}
+            url={MAP_TILE_URL}
           />
 
           {filteredPoints.map(point => (
@@ -120,7 +119,14 @@ export function MapPage() {
             />
           )}
 
-          {flyTarget && <FlyTo position={flyTarget.pos} zoom={flyTarget.zoom} />}
+          {activeFlyTarget && (
+            <FlyTo
+              lat={activeFlyTarget.pos[0]}
+              lng={activeFlyTarget.pos[1]}
+              zoom={activeFlyTarget.zoom}
+              flyKey={activeFlyTarget.key}
+            />
+          )}
         </MapContainer>
 
         {/* Map overlays */}

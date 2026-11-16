@@ -2,9 +2,11 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Image, MapPin, Clock, Users, FileText } from '@phosphor-icons/react';
 import { Alert, Badge, Button, Card } from '@/components/ui';
+import { formatarDataCurta, formatarDataHoraCurta } from '@/lib/moderacao';
 import {
   FREQUENCY_LABELS, VOLUME_LABELS, TIME_LABELS,
-  OCORRENCIA_STATUS_LABELS, POINT_STATUS_LABELS, POINT_STATUS_VARIANTS,
+  OCORRENCIA_STATUS_LABELS, OCORRENCIA_STATUS_VARIANTS,
+  POINT_STATUS_LABELS, POINT_STATUS_VARIANTS,
   WASTE_CATEGORY_LABELS,
 } from '@/types';
 import type { Ocorrencia, PontoGestor } from '@/types';
@@ -13,7 +15,8 @@ import type { Ocorrencia, PontoGestor } from '@/types';
 export interface OcorrenciaDetailData {
   ocorrencia: Pick<Ocorrencia,
     'id' | 'categoria_principal' | 'status' | 'data_registro' | 'descricao' |
-    'tipo_residuo' | 'frequencia_percebida' | 'volume_estimado' | 'horario_percebido'>;
+    'tipo_residuo' | 'frequencia_percebida' | 'volume_estimado' | 'horario_percebido'> &
+    Partial<Pick<Ocorrencia, 'prazo_resolucao' | 'prorrogado_em'>>;
   ponto: Pick<PontoGestor, 'id' | 'status' | 'endereco' | 'bairro'> | null;
 }
 
@@ -30,12 +33,14 @@ interface OcorrenciaDetailViewProps {
   /** Contexto de entrada por ponto: o ID do ponto não identifica uma ocorrência. */
   pontoId?: string;
   state: OcorrenciaDetailState;
-  /** Integrações futuras. O chamador controla loading/erro/vazio de cada bloco. */
+  /** Blocos integrados pela camada de detalhe da gestão. */
+  alertaPrazo?: ReactNode;
   evidencias?: ReactNode;
   mapa?: ReactNode;
   historico?: ReactNode;
   confirmacoes?: ReactNode;
   registrosRelacionados?: ReactNode;
+  moderacao?: ReactNode;
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -59,7 +64,7 @@ function Pending({ icon, children }: { icon: ReactNode; children: ReactNode }) {
 }
 
 function Field({ label, value }: { label: string; value: string }) {
-  return <div className="min-w-0"><dt className="text-sm text-surface-500">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-base text-surface-900">{value}</dd></div>;
+  return <div className="min-w-0"><dt className="text-sm font-medium text-surface-600">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-base text-surface-900">{value}</dd></div>;
 }
 
 function labelFor(value: string | null | undefined, labels: Record<string, string>, pending: boolean) {
@@ -68,12 +73,20 @@ function labelFor(value: string | null | undefined, labels: Record<string, strin
 
 function dateLabel(value: string | undefined) {
   if (!value) return 'Aguardando dados';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? 'Data indisponível' : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+  return formatarDataHoraCurta(value) ?? 'Data indisponível';
 }
 
 export function OcorrenciaDetailView({
-  ocorrenciaId, pontoId, state, evidencias, mapa, historico, confirmacoes, registrosRelacionados,
+  ocorrenciaId,
+  pontoId,
+  state,
+  alertaPrazo,
+  evidencias,
+  mapa,
+  historico,
+  confirmacoes,
+  registrosRelacionados,
+  moderacao,
 }: OcorrenciaDetailViewProps) {
   const viaPonto = pontoId !== undefined;
   const data = state.status === 'ready' ? state.data : undefined;
@@ -83,6 +96,7 @@ export function OcorrenciaDetailView({
   const residuos = Array.isArray(ocorrencia?.tipo_residuo)
     ? ocorrencia.tipo_residuo.map(value => WASTE_CATEGORY_LABELS[value] ?? value).join(', ')
     : ocorrencia?.tipo_residuo ? WASTE_CATEGORY_LABELS[ocorrencia.tipo_residuo] ?? ocorrencia.tipo_residuo : null;
+  const prazoFormatado = formatarDataCurta(ocorrencia?.prazo_resolucao);
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-5xl space-y-6 pb-8 [overflow-wrap:anywhere]">
@@ -116,11 +130,39 @@ export function OcorrenciaDetailView({
       )}
 
       {(pending || data) && <>
+        {alertaPrazo}
+
         <Section title={labelFor(ocorrencia?.categoria_principal, WASTE_CATEGORY_LABELS, pending)}>
           <div className="flex flex-wrap gap-x-8 gap-y-4">
-            <div><p className="mb-2 text-sm text-surface-500">Status da ocorrência</p><Badge variant="neutral">{labelFor(ocorrencia?.status, OCORRENCIA_STATUS_LABELS, pending)}</Badge></div>
-            <div><p className="mb-2 text-sm text-surface-500">Status do ponto</p><Badge variant={data?.ponto ? POINT_STATUS_VARIANTS[data.ponto.status] : 'neutral'}>{pending ? 'Aguardando dados' : data?.ponto ? POINT_STATUS_LABELS[data.ponto.status] : 'Sem ponto vinculado'}</Badge></div>
-            <div><p className="mb-2 text-sm text-surface-500">Data do registro</p><p className="text-sm text-surface-900">{dateLabel(ocorrencia?.data_registro)}</p></div>
+            <div>
+              <p className="mb-2 text-sm font-medium text-surface-600">Status da ocorrência</p>
+              <Badge variant={ocorrencia ? OCORRENCIA_STATUS_VARIANTS[ocorrencia.status] : 'neutral'}>
+                {labelFor(ocorrencia?.status, OCORRENCIA_STATUS_LABELS, pending)}
+              </Badge>
+            </div>
+            <div>
+              <p className="mb-2 text-sm font-medium text-surface-600">Status do ponto</p>
+              <Badge variant={data?.ponto ? POINT_STATUS_VARIANTS[data.ponto.status] : 'neutral'}>
+                {pending ? 'Aguardando dados' : data?.ponto ? POINT_STATUS_LABELS[data.ponto.status] : 'Sem ponto vinculado'}
+              </Badge>
+            </div>
+            <div>
+              <p className="mb-2 text-sm font-medium text-surface-600">Data do registro</p>
+              <p className="text-sm font-medium text-surface-900">{dateLabel(ocorrencia?.data_registro)}</p>
+            </div>
+            <div>
+              <p className="mb-2 text-sm font-medium text-surface-600">Prazo de resolução</p>
+              {prazoFormatado ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-surface-900">{prazoFormatado}</p>
+                  {ocorrencia?.prorrogado_em && <Badge variant="info">Prorrogado</Badge>}
+                </div>
+              ) : (
+                <p className="text-sm text-surface-600">
+                  {pending ? 'Aguardando dados' : 'Prazo não informado'}
+                </p>
+              )}
+            </div>
           </div>
         </Section>
 
@@ -156,10 +198,14 @@ export function OcorrenciaDetailView({
           {mapa ?? <Pending icon={<MapPin size={20} />}>O mapa ainda não está disponível. A localização será apresentada a partir das coordenadas do registro, sem estimar um local.</Pending>}
         </Section>
         <Section title="Ações de moderação">
-          <p id="moderacao-indisponivel" className="mb-4 text-sm leading-relaxed text-surface-600">As decisões de moderação ainda não estão disponíveis nesta tela. A elegibilidade de cada ação será definida pelo estado operacional validado. Os controles abaixo são apenas uma apresentação das ações previstas.</p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap" aria-describedby="moderacao-indisponivel">
-            {['Manter em análise', 'Encaminhar', 'Invalidar', 'Resolver', 'Arquivar'].map(action => <Button key={action} disabled variant="secondary" className="min-h-11 whitespace-normal">{action}</Button>)}
-          </div>
+          {moderacao ?? (
+            <>
+              <p id="moderacao-indisponivel" className="mb-4 text-sm leading-relaxed text-surface-600">As decisões de moderação ainda não estão disponíveis nesta tela. A elegibilidade de cada ação será definida pelo estado operacional validado. Os controles abaixo são apenas uma apresentação das ações previstas.</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap" aria-describedby="moderacao-indisponivel">
+                {['Manter em análise', 'Invalidar', 'Prorrogar prazo', 'Resolver', 'Arquivar'].map(action => <Button key={action} disabled variant="secondary" className="min-h-11 whitespace-normal">{action}</Button>)}
+              </div>
+            </>
+          )}
         </Section>
       </>}
     </div>

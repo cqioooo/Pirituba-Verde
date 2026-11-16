@@ -1,6 +1,7 @@
 
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer } from 'react-leaflet';
+import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from '@/lib/mapTiles';
 import { Button, Spinner } from '@/components/ui';
 import { PublicPointMarker } from '@/components/map/PointMarker';
 import { MapLegend } from '@/components/map/MapLegend';
@@ -45,8 +46,8 @@ export function PublicMapPage() {
               attributionControl={true}
             >
               <TileLayer
-                attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                attribution={MAP_TILE_ATTRIBUTION}
+                url={MAP_TILE_URL}
               />
               {filteredPoints.map(point => (
                 <PublicPointMarker key={point.id} point={point} />

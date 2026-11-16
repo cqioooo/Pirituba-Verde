@@ -88,3 +88,17 @@ export function validateStreet(street: string): string | null {
   if (!street.trim()) return 'Informe sua rua.';
   return null;
 }
+
+export function validateMajorityDeclaration(accepted: boolean): string | null {
+  if (!accepted) {
+    return 'Confirme que você tem 18 anos ou mais para criar sua conta.';
+  }
+  return null;
+}
+
+export function validateTermsAcceptance(accepted: boolean): string | null {
+  if (!accepted) {
+    return 'Você precisa ler e aceitar o Termo de Uso e Aviso de Privacidade.';
+  }
+  return null;
+}

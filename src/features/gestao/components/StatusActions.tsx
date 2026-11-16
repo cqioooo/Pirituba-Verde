@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, Modal, Textarea } from '@/components/ui';
 import { POINT_STATUS_LABELS, STATUS_TRANSITIONS } from '@/types';
 import type { StatusPonto } from '@/types';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { useUpdatePontoStatus } from '@/services/queries';
 
 interface StatusActionsProps {

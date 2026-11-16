@@ -5,20 +5,23 @@ import { PointFilters } from '../components/PointFilters';
 import { CriticidadeBadge } from '../components/CriticidadeBadge';
 import { Spinner, Badge, Button } from '@/components/ui';
 import { POINT_STATUS_LABELS, WASTE_CATEGORY_LABELS, classificarCriticidade } from '@/types';
-import { formatDate } from '@/lib/utils';
+import type { PontoGestor } from '@/types';
+import { formatarDataCurta } from '@/lib/moderacao';
 import { CaretRight, ArrowsVertical } from '@phosphor-icons/react';
+
+type PontoSortKey = keyof PontoGestor;
 
 export function PointsListPage() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({ status: '', categoria: '', criticidade: '', busca: '' });
-  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ 
-    key: 'criticidade', 
-    direction: 'desc' 
+  const [sortConfig, setSortConfig] = useState<{ key: PontoSortKey; direction: 'asc' | 'desc' }>({
+    key: 'criticidade',
+    direction: 'desc',
   });
-  
+
   const { data: points = [], isLoading } = usePontosGestor();
 
-  const handleSort = (key: string) => {
+  const handleSort = (key: PontoSortKey) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -27,7 +30,7 @@ export function PointsListPage() {
   };
 
   const sortedAndFilteredPoints = useMemo(() => {
-    let result = points.filter(p => {
+    const result = points.filter(p => {
       if (filters.status && p.status !== filters.status) return false;
       if (filters.categoria && p.categoria_principal !== filters.categoria) return false;
       
@@ -52,12 +55,15 @@ export function PointsListPage() {
 
     if (sortConfig !== null) {
       result.sort((a, b) => {
-        let aValue: any = a[sortConfig.key as keyof typeof a];
-        let bValue: any = b[sortConfig.key as keyof typeof b];
+        const rawA = a[sortConfig.key];
+        const rawB = b[sortConfig.key];
 
-        // Trata nulos para não quebrar a ordenação
-        if (aValue === null) aValue = '';
-        if (bValue === null) bValue = '';
+        if (typeof rawA === 'number' && typeof rawB === 'number') {
+          return sortConfig.direction === 'asc' ? rawA - rawB : rawB - rawA;
+        }
+
+        const aValue = rawA === null || rawA === undefined ? '' : String(rawA);
+        const bValue = rawB === null || rawB === undefined ? '' : String(rawB);
 
         if (aValue < bValue) {
           return sortConfig.direction === 'asc' ? -1 : 1;
@@ -80,7 +86,7 @@ export function PointsListPage() {
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm border border-surface-200">
-        <PointFilters onFilterChange={(f) => setFilters(f as any)} />
+        <PointFilters onFilterChange={setFilters} />
       </div>
 
       <div className="bg-white rounded-[24px] shadow-sm border border-surface-200 overflow-hidden flex flex-col min-h-[400px]">
@@ -151,8 +157,10 @@ export function PointsListPage() {
                     <td className="px-6 py-4 text-center whitespace-nowrap font-bold text-surface-900">
                       {point.total_denuncias}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-surface-500 text-sm font-medium">
-                      {point.data_ultima_ocorrencia ? formatDate(point.data_ultima_ocorrencia) : '-'}
+                    <td className="px-6 py-4 whitespace-nowrap text-surface-600 text-sm font-medium">
+                      {point.data_ultima_ocorrencia
+                        ? (formatarDataCurta(point.data_ultima_ocorrencia) ?? 'Data indisponível')
+                        : '-'}
                     </td>
                     <td className="px-6 py-4 text-right whitespace-nowrap">
                       <Button onClick={() => navigate(`/gestao/pontos/${point.id}`)} variant="outline" size="sm" className="gap-1.5 shadow-sm">

@@ -1,12 +1,14 @@
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
-import type { ReportDraft } from '@/types';
+import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from '@/lib/mapTiles';
+import type { PontoAutenticado, ReportDraft } from '@/types';
 import {
   WASTE_CATEGORY_LABELS,
   WASTE_CATEGORY_COLORS,
   FREQUENCY_LABELS,
   TIME_LABELS,
   VOLUME_LABELS,
+  POINT_STATUS_LABELS,
 } from '@/types';
 import { MapPin, Tag, Clock, Ruler, FileText, CheckCircle, Image as ImageIcon } from '@phosphor-icons/react';
 
@@ -27,6 +29,7 @@ const pinIcon = L.divIcon({
 interface ReviewStepProps {
   draft: ReportDraft;
   isConfirmation: boolean;
+  confirmingPoint?: PontoAutenticado | null;
 }
 
 function ReviewRow({
@@ -54,7 +57,7 @@ function ReviewRow({
   );
 }
 
-export function ReviewStep({ draft, isConfirmation }: ReviewStepProps) {
+export function ReviewStep({ draft, isConfirmation, confirmingPoint }: ReviewStepProps) {
   return (
     <div className="space-y-4">
       <div>
@@ -80,9 +83,9 @@ export function ReviewStep({ draft, isConfirmation }: ReviewStepProps) {
           scrollWheelZoom={false}
           doubleClickZoom={false}
         >
-          <TileLayer 
-            attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" 
+          <TileLayer
+            attribution={MAP_TILE_ATTRIBUTION}
+            url={MAP_TILE_URL}
           />
           <Marker position={[draft.latitude, draft.longitude]} icon={pinIcon} />
         </MapContainer>
@@ -90,14 +93,27 @@ export function ReviewStep({ draft, isConfirmation }: ReviewStepProps) {
 
       {/* Review data */}
       <div className="bg-white border border-surface-200 rounded-xl divide-y divide-surface-100">
+        {isConfirmation && confirmingPoint && (
+          <div className="px-4">
+            <ReviewRow
+              icon={MapPin}
+              label="Ponto selecionado para confirmação"
+              value={`${confirmingPoint.endereco || confirmingPoint.bairro || 'Ponto registrado'} · ${POINT_STATUS_LABELS[confirmingPoint.status]} (${confirmingPoint.confirmacoes} confirmações atuais)`}
+            />
+          </div>
+        )}
         <div className="px-4">
           <ReviewRow
             icon={MapPin}
-            label="Localização"
-            value={`${draft.latitude.toFixed(5)}, ${draft.longitude.toFixed(5)}`}
+            label={isConfirmation ? 'Sua posição atual' : 'Endereço / Localização'}
+            value={
+              draft.endereco?.trim()
+                ? `${draft.endereco.trim()} (${draft.latitude.toFixed(5)}, ${draft.longitude.toFixed(5)})`
+                : `${draft.latitude.toFixed(5)}, ${draft.longitude.toFixed(5)}`
+            }
           />
         </div>
-        {draft.categoria_principal && (
+        {!isConfirmation && draft.categoria_principal && (
           <div className="px-4">
             <ReviewRow
               icon={Tag}
@@ -167,8 +183,9 @@ export function ReviewStep({ draft, isConfirmation }: ReviewStepProps) {
       <div className="flex items-start gap-2 bg-primary-50 border border-primary-100 rounded-lg p-3">
         <CheckCircle className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
         <p className="text-xs text-primary-700 leading-relaxed">
-          Após o envio, sua denúncia passará por validação. Você receberá atualizações sobre o andamento
-          na área de notificações.
+          {isConfirmation
+            ? 'Ao confirmar, você fortalece o registro existente sem criar uma nova denúncia nem consumir seu limite diário.'
+            : 'Após o envio, sua denúncia passará por validação. Você receberá atualizações sobre o andamento na área de notificações.'}
         </p>
       </div>
     </div>

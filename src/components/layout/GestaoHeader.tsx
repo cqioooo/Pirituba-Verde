@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { List, User as UserIcon } from '@phosphor-icons/react';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { usePerfilUsuario } from '@/services/queries';
 import { BottomSheet } from '../ui/BottomSheet';
 import { GestaoSidebar } from './GestaoSidebar';
@@ -16,10 +16,10 @@ export function GestaoHeader() {
         <div className="flex items-center">
           <button
             type="button"
-            className="-ml-2 mr-2 inline-flex h-10 w-10 items-center justify-center rounded-md text-surface-500 hover:bg-surface-100 hover:text-surface-700 md:hidden"
+            aria-label="Abrir menu de navegação"
+            className="-ml-2 mr-2 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-surface-600 hover:bg-surface-100 hover:text-surface-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 md:hidden"
             onClick={() => setMobileMenuOpen(true)}
           >
-            <span className="sr-only">Abrir menu</span>
             <List className="h-6 w-6" aria-hidden="true" />
           </button>
 

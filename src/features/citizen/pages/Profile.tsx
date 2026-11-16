@@ -1,4 +1,4 @@
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { usePerfilUsuario } from '@/services/queries';
 import { Spinner } from '@/components/ui';
 import { UserCircle, Envelope, MapPin, Phone, Info } from '@phosphor-icons/react';

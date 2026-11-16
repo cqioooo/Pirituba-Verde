@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { Button, Input, Alert } from '@/components/ui';
 import { validateEmail, validatePassword } from '../validators';
 import { Envelope, Lock } from '@phosphor-icons/react';

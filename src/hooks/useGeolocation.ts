@@ -29,9 +29,23 @@ const INITIAL_STATE: UserLocationState = {
   permissionDenied: false,
 };
 
+function createInitialLocationState(autoRequest: boolean): UserLocationState {
+  if (autoRequest && typeof navigator !== 'undefined' && !navigator.geolocation) {
+    return {
+      ...INITIAL_STATE,
+      error: 'Geolocalização não suportada neste navegador.',
+    };
+  }
+
+  return {
+    ...INITIAL_STATE,
+    loading: autoRequest && typeof navigator !== 'undefined' && Boolean(navigator.geolocation),
+  };
+}
+
 export function useGeolocation(options: UseGeolocationOptions = {}) {
   const { watch = false, autoRequest = false, timeout = 10000 } = options;
-  const [state, setState] = useState<UserLocationState>(INITIAL_STATE);
+  const [state, setState] = useState<UserLocationState>(() => createInitialLocationState(autoRequest));
   const watchIdRef = useRef<number | null>(null);
 
   const handleSuccess = useCallback((position: GeolocationPosition) => {
@@ -59,18 +73,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     }));
   }, []);
 
-  const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setState(prev => ({
-        ...prev,
-        error: 'Geolocalização não suportada neste navegador.',
-        loading: false,
-      }));
-      return;
-    }
-
-    setState(prev => ({ ...prev, loading: true, error: null }));
-
+  const startGeolocation = useCallback(() => {
     const geoOptions: PositionOptions = {
       enableHighAccuracy: true,
       timeout,
@@ -95,6 +98,20 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     }
   }, [watch, timeout, handleSuccess, handleError]);
 
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setState(prev => ({
+        ...prev,
+        error: 'Geolocalização não suportada neste navegador.',
+        loading: false,
+      }));
+      return;
+    }
+
+    setState(prev => ({ ...prev, loading: true, error: null }));
+    startGeolocation();
+  }, [startGeolocation]);
+
   const stopWatching = useCallback(() => {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
@@ -104,13 +121,13 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
 
   // Auto-request se configurado
   useEffect(() => {
-    if (autoRequest) {
-      requestLocation();
+    if (autoRequest && typeof navigator !== 'undefined' && navigator.geolocation) {
+      startGeolocation();
     }
     return () => {
       stopWatching();
     };
-  }, [autoRequest, requestLocation, stopWatching]);
+  }, [autoRequest, startGeolocation, stopWatching]);
 
   /** Coordenadas com fallback para centro de Pirituba */
   const effectiveCoords: [number, number] = [

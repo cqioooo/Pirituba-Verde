@@ -56,8 +56,8 @@ export function HeroSection() {
                     <MapPin className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-sm text-surface-500 font-medium">Pontos mapeados</p>
-                    <p className="font-heading text-2xl font-bold text-surface-900">+1.200</p>
+                    <p className="text-sm text-surface-500 font-medium">Território monitorado</p>
+                    <p className="font-heading text-lg font-bold text-surface-900">Pirituba e Jaraguá</p>
                   </div>
                 </div>
               </div>

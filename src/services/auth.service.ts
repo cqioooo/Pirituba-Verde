@@ -17,17 +17,32 @@ export const authService = {
       password: registerData.password,
       options: {
         data: {
-          full_name: registerData.fullName,
-          cpf_hash: registerData.cpfHash,
-          data_nascimento: registerData.dateOfBirth,
-          bairro_residencia: registerData.neighborhood,
-          rua: registerData.street,
-          telefone: registerData.phone,
+          full_name: registerData.fullName?.trim() || null,
+          cpf_hash: registerData.cpfHash || null,
+          data_nascimento: registerData.dateOfBirth?.trim() || null,
+          bairro_residencia: registerData.neighborhood?.trim() || null,
+          rua: registerData.street?.trim() || null,
+          telefone: registerData.phone?.trim() || null,
+          maioridade_declarada: registerData.maioridadeDeclarada,
+          termo_versao: registerData.termoVersao,
+          termo_aceito_em: registerData.termoAceitoEm,
         },
       },
     });
     if (error) throw error;
     return data;
+  },
+
+  async updateTermsAcceptance(versao: string, aceitoEm: string) {
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        maioridade_declarada: true,
+        termo_versao: versao,
+        termo_aceito_em: aceitoEm,
+      },
+    });
+    if (error) throw error;
+    return data.user;
   },
 
   async signOut() {

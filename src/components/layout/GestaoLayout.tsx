@@ -16,14 +16,14 @@ export function GestaoLayout() {
       </div>
 
       {/* Main content area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <GestaoHeader />
 
-        <main className="flex-1 overflow-y-auto outline-none" tabIndex={-1}>
+        <main className="min-w-0 flex-1 overflow-y-auto outline-none" tabIndex={-1}>
           {isFullBleed ? (
             <Outlet />
           ) : (
-            <div className="mx-auto max-w-[1400px] px-6 py-8">
+            <div className="mx-auto w-full min-w-0 max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
               <Outlet />
             </div>
           )}

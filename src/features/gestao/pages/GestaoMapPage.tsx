@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from '@/lib/mapTiles';
 import { Spinner } from '@/components/ui';
 import { usePontosGestor } from '@/services/queries';
 import { PIRITUBA_CENTER, DEFAULT_ZOOM, DETAIL_ZOOM } from '@/types';
@@ -78,8 +79,8 @@ export function GestaoMapPage() {
           zoomControl={false}
         >
           <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            attribution={MAP_TILE_ATTRIBUTION}
+            url={MAP_TILE_URL}
           />
 
           {filteredPoints.map(point => (
@@ -99,7 +100,7 @@ export function GestaoMapPage() {
             <h3 className="font-semibold text-surface-900 mb-3 flex items-center gap-2 text-sm">
               <Funnel className="w-4 h-4" /> Filtros do Mapa
             </h3>
-            <PointFilters onFilterChange={(f) => setFilters(f as any)} />
+            <PointFilters onFilterChange={setFilters} />
             <p className="text-xs text-surface-500 mt-3 font-medium">
               Mostrando {filteredPoints.length} pontos
             </p>
@@ -138,7 +139,7 @@ export function GestaoMapPage() {
         title="Filtros do Mapa"
       >
         <div className="p-4 pt-2">
-          <PointFilters onFilterChange={(f) => setFilters(f as any)} />
+          <PointFilters onFilterChange={setFilters} />
         </div>
       </BottomSheet>
     </div>

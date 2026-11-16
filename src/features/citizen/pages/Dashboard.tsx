@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { Badge, Spinner } from '@/components/ui';
 import { MapTrifold, FileText, Bell, ArrowRight, Plus, Users, ChartLineUp } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';

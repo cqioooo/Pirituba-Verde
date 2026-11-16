@@ -1,7 +1,7 @@
 import { forwardRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { CircleNotch } from '@phosphor-icons/react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { HTMLMotionProps } from 'framer-motion';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'inverse';
@@ -52,13 +52,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
+    const reduceMotion = useReducedMotion();
+
     return (
       <motion.button
         ref={ref}
         disabled={disabled || loading}
-        whileHover={{ scale: disabled || loading ? 1 : 1.01 }}
-        whileTap={{ scale: disabled || loading ? 1 : 0.97 }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        whileHover={reduceMotion || disabled || loading ? undefined : { scale: 1.01 }}
+        whileTap={reduceMotion || disabled || loading ? undefined : { scale: 0.97 }}
+        transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 25 }}
         className={cn(
           'inline-flex items-center justify-center font-medium',
           'transition-colors duration-200 cursor-pointer',

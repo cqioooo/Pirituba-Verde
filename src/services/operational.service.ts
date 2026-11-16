@@ -131,7 +131,6 @@ export async function getScenarioSummary(periodo: string): Promise<ScenarioSumma
 export async function getOperationalAlerts(periodo: string): Promise<OperationalAlert[]> {
   const points = await fetchPontosForPeriod(periodo);
   const alerts: OperationalAlert[] = [];
-  let alertId = 0;
 
   const activePoints = points.filter(p => ACTIVE_STATUSES.includes(p.status));
   const criticalPoints = activePoints.filter(p => (p.criticidade ?? 0) >= 75);
@@ -140,7 +139,7 @@ export async function getOperationalAlerts(periodo: string): Promise<Operational
   // Alerta: pontos críticos ativos
   if (criticalPoints.length > 0) {
     alerts.push({
-      id: `alert-${++alertId}`,
+      id: `alert-${alerts.length + 1}`,
       level: 'priority',
       title: `${criticalPoints.length} ponto(s) com criticidade crítica`,
       description: `Existem ${criticalPoints.length} pontos ativos com criticidade acima de 75 que exigem acompanhamento prioritário.`,
@@ -159,7 +158,7 @@ export async function getOperationalAlerts(periodo: string): Promise<Operational
   });
   if (stalePoints.length > 0) {
     alerts.push({
-      id: `alert-${++alertId}`,
+      id: `alert-${alerts.length + 1}`,
       level: 'warning',
       title: `${stalePoints.length} ponto(s) sem atualização há mais de 7 dias`,
       description: `Esses pontos ativos não receberam novas ocorrências ou mudança de status recentemente.`,
@@ -171,7 +170,7 @@ export async function getOperationalAlerts(periodo: string): Promise<Operational
   if (recurrentPoints.length > 0) {
     const recRate = activePoints.length > 0 ? Math.round((recurrentPoints.length / activePoints.length) * 100) : 0;
     alerts.push({
-      id: `alert-${++alertId}`,
+      id: `alert-${alerts.length + 1}`,
       level: recRate > 30 ? 'warning' : 'info',
       title: `Reincidência em ${recRate}% dos pontos ativos`,
       description: `${recurrentPoints.length} dos ${activePoints.length} pontos ativos do período são recorrentes.`,
@@ -190,7 +189,7 @@ export async function getOperationalAlerts(periodo: string): Promise<Operational
     const pct = Math.round((topBairro[1] / activePoints.length) * 100);
     if (pct >= 25) {
       alerts.push({
-        id: `alert-${++alertId}`,
+        id: `alert-${alerts.length + 1}`,
         level: pct >= 40 ? 'priority' : 'info',
         title: `${topBairro[0]} concentra ${pct}% dos pontos ativos`,
         description: `O bairro ${topBairro[0]} lidera com ${topBairro[1]} pontos ativos no período.`,
@@ -210,7 +209,7 @@ export async function getOperationalAlerts(periodo: string): Promise<Operational
     const pct = Math.round((topCat[1] / activePoints.length) * 100);
     if (pct >= 30) {
       alerts.push({
-        id: `alert-${++alertId}`,
+        id: `alert-${alerts.length + 1}`,
         level: 'info',
         title: `${topCat[0]} lidera com ${pct}% dos registros`,
         description: `A categoria ${topCat[0]} continua sendo o tipo de descarte mais comum entre os pontos ativos.`,
@@ -223,7 +222,7 @@ export async function getOperationalAlerts(periodo: string): Promise<Operational
   // Se não gerou nenhum alerta, informar
   if (alerts.length === 0) {
     alerts.push({
-      id: `alert-${++alertId}`,
+      id: `alert-${alerts.length + 1}`,
       level: 'info',
       title: 'Nenhum alerta relevante no período',
       description: 'Não foram identificadas situações que exijam atenção imediata.',
@@ -269,7 +268,7 @@ function generateReason(p: PontoGestor): string {
     : 'Ponto ativo no período.';
 }
 
-export async function getPriorityRanking(_periodo: string): Promise<PriorityRankingItem[]> {
+export async function getPriorityRanking(): Promise<PriorityRankingItem[]> {
   const allActive = await fetchAllActivePoints();
   
   if (allActive.length === 0) return [];
@@ -312,7 +311,7 @@ function pontoToDrilldownItem(p: PontoGestor): DrilldownItem {
 export async function getChartDrilldownData(sourceChart: string, filterValue: string): Promise<DrilldownResponse> {
   const allActive = await fetchAllActivePoints();
 
-  let filtered: PontoGestor[] = [];
+  let filtered: PontoGestor[];
   let title = `Pontos: ${filterValue}`;
   let subtitle = 'Lista dos pontos que compõem este agrupamento.';
 

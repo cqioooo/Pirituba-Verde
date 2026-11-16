@@ -7,22 +7,45 @@ function assertConfigured() {
   }
 }
 
-// Utilitário para construir as queries com os filtros comuns
-function applyCommonFilters(query: any, filters: AnalyticsFilters, dateColumn: string = 'created_at', prefix: string = '') {
+interface FilterableQuery<T> {
+  gte: (column: string, value: string) => T;
+  lte: (column: string, value: string) => T;
+  in: (column: string, values: readonly string[]) => T;
+  eq: (column: string, value: string | boolean) => T;
+}
+
+function applyDateFilters<T extends Pick<FilterableQuery<T>, 'gte' | 'lte'>>(
+  query: T,
+  filters: AnalyticsFilters,
+  dateColumn: string = 'created_at',
+  prefix: string = ''
+): T {
   const p = prefix ? `${prefix}.` : '';
 
-  // Filtro de data
   if (filters.periodo !== 'custom') {
     const dataInicial = new Date();
-    if (filters.periodo === 'hoje') dataInicial.setHours(0,0,0,0);
+    if (filters.periodo === 'hoje') dataInicial.setHours(0, 0, 0, 0);
     else if (filters.periodo === '7d') dataInicial.setDate(dataInicial.getDate() - 7);
     else if (filters.periodo === '30d') dataInicial.setDate(dataInicial.getDate() - 30);
     else if (filters.periodo === '90d') dataInicial.setDate(dataInicial.getDate() - 90);
-    
+
     query = query.gte(`${p}${dateColumn}`, dataInicial.toISOString());
   } else if (filters.dataInicial && filters.dataFinal) {
     query = query.gte(`${p}${dateColumn}`, filters.dataInicial).lte(`${p}${dateColumn}`, filters.dataFinal);
   }
+
+  return query;
+}
+
+// Utilitário para construir as queries com os filtros comuns
+function applyCommonFilters<T extends FilterableQuery<T>>(
+  query: T,
+  filters: AnalyticsFilters,
+  dateColumn: string = 'created_at',
+  prefix: string = ''
+): T {
+  const p = prefix ? `${prefix}.` : '';
+  query = applyDateFilters(query, filters, dateColumn, prefix);
 
   if (filters.status.length > 0) query = query.in(`${p}status`, filters.status);
   if (filters.bairro.length > 0) query = query.in(`${p}bairro`, filters.bairro);
@@ -223,16 +246,19 @@ export async function getCriticalityDistribution(filters: AnalyticsFilters): Pro
   ];
 }
 
-export async function getWeekdayAnalysis(_filters: AnalyticsFilters): Promise<DistributionData[]> {
+export async function getWeekdayAnalysis(filters: AnalyticsFilters): Promise<DistributionData[]> {
   assertConfigured();
-  let query = supabase.from('ocorrencias').select('created_at');
-  
-  // Para ocorrências não temos as mesmas colunas de pontos, então simplificamos os filtros ou assumimos campos equivalentes.
+  const query = applyDateFilters(
+    supabase.from('ocorrencias').select('created_at'),
+    filters,
+  );
+
+  // Para ocorrências não temos as mesmas colunas de pontos, aplicamos o filtro temporal.
   const { data, error } = await query;
   if (error) throw error;
 
   const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-  const count = [0,0,0,0,0,0,0];
+  const count = [0, 0, 0, 0, 0, 0, 0];
 
   data?.forEach(o => {
     const date = new Date(o.created_at);
@@ -242,10 +268,13 @@ export async function getWeekdayAnalysis(_filters: AnalyticsFilters): Promise<Di
   return dias.map((dia, idx) => ({ label: dia, value: count[idx] }));
 }
 
-export async function getTimeRangeAnalysis(_filters: AnalyticsFilters): Promise<DistributionData[]> {
+export async function getTimeRangeAnalysis(filters: AnalyticsFilters): Promise<DistributionData[]> {
   assertConfigured();
-  let query = supabase.from('ocorrencias').select('created_at');
-  
+  const query = applyDateFilters(
+    supabase.from('ocorrencias').select('created_at'),
+    filters,
+  );
+
   const { data, error } = await query;
   if (error) throw error;
 

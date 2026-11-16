@@ -1,32 +1,32 @@
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { authService } from '@/services/auth.service';
 import { isSupabaseConfigured } from '@/integrations/supabase/client';
-import type { AuthContextType, LoginCredentials, RegisterData } from '@/types';
+import { VERSAO_TERMO_ATUAL } from '@/lib/termos';
+import type { LoginCredentials, RegisterData } from '@/types';
+import { AuthContext } from './authContext';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+function readInitialMockSession(): Session | null {
+  if (isSupabaseConfigured || typeof window === 'undefined') return null;
+  const savedMockSession = localStorage.getItem('pirituba_verde_mock_session');
+  if (!savedMockSession) return null;
+  try {
+    return JSON.parse(savedMockSession) as Session;
+  } catch {
+    localStorage.removeItem('pirituba_verde_mock_session');
+    return null;
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(() => readInitialMockSession());
+  const [user, setUser] = useState<User | null>(() => readInitialMockSession()?.user ?? null);
+  const [loading, setLoading] = useState(() => isSupabaseConfigured);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Se Supabase não está configurado, carregar dados mockados do localStorage
     if (!isSupabaseConfigured) {
-      const savedMockSession = localStorage.getItem('pirituba_verde_mock_session');
-      if (savedMockSession) {
-        try {
-          const parsed = JSON.parse(savedMockSession) as Session;
-          setSession(parsed);
-          setUser(parsed.user);
-        } catch {
-          localStorage.removeItem('pirituba_verde_mock_session');
-        }
-      }
-      setLoading(false);
       return;
     }
 
@@ -84,6 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             neighborhood: 'Pirituba Centro',
             street: 'Rua Paula Ferreira, 1000',
             phone: '(11) 98888-8888',
+            maioridade_declarada: true,
+            termo_versao: VERSAO_TERMO_ATUAL,
+            termo_aceito_em: new Date().toISOString(),
           },
           app_metadata: {},
           aud: 'authenticated',
@@ -116,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const translated = translateAuthError(message, code);
       setError(translated);
-      throw new Error(translated);
+      throw new Error(translated, { cause: err });
     } finally {
       setLoading(false);
     }
@@ -153,12 +156,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: 'mock-user-id-' + Date.now(),
           email: safeData.email,
           user_metadata: {
-            full_name: safeData.fullName,
-            cpf_hash: safeData.cpfHash,
-            data_nascimento: safeData.dateOfBirth,
-            bairro_residencia: safeData.neighborhood,
-            rua: safeData.street,
-            telefone: safeData.phone,
+            full_name: safeData.fullName?.trim() || null,
+            cpf_hash: safeData.cpfHash || null,
+            data_nascimento: safeData.dateOfBirth?.trim() || null,
+            bairro_residencia: safeData.neighborhood?.trim() || null,
+            rua: safeData.street?.trim() || null,
+            telefone: safeData.phone?.trim() || null,
+            maioridade_declarada: safeData.maioridadeDeclarada,
+            termo_versao: safeData.termoVersao,
+            termo_aceito_em: safeData.termoAceitoEm,
           },
           app_metadata: {},
           aud: 'authenticated',
@@ -191,11 +197,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const translated = translateAuthError(message, code);
       setError(translated);
-      throw new Error(translated);
+      throw new Error(translated, { cause: err });
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const acceptTerms = useCallback(
+    async (versao: string = VERSAO_TERMO_ATUAL) => {
+      setError(null);
+      const aceitoEm = new Date().toISOString();
+
+      if (!isSupabaseConfigured) {
+        if (!user || !session) return;
+        const updatedUser: User = {
+          ...user,
+          user_metadata: {
+            ...user.user_metadata,
+            maioridade_declarada: true,
+            termo_versao: versao,
+            termo_aceito_em: aceitoEm,
+          },
+        };
+        const updatedSession: Session = { ...session, user: updatedUser };
+        localStorage.setItem('pirituba_verde_mock_session', JSON.stringify(updatedSession));
+        setSession(updatedSession);
+        setUser(updatedUser);
+        return;
+      }
+
+      const updatedUser = await authService.updateTermsAcceptance(versao, aceitoEm);
+      if (updatedUser) {
+        setUser(updatedUser);
+        setSession((prev) => (prev ? { ...prev, user: updatedUser } : prev));
+      }
+    },
+    [session, user]
+  );
 
   const logout = useCallback(async () => {
     setError(null);
@@ -214,18 +252,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, error, login, register, logout }}>
+    <AuthContext.Provider value={{ user, session, loading, error, login, register, acceptTerms, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
-  return context;
 }
 
 /**

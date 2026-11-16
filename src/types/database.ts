@@ -99,6 +99,7 @@ export interface PontoAutenticado {
   data_primeira_ocorrencia: string | null;
   data_ultima_ocorrencia: string | null;
   distancia_ecoponto_metros: number | null;
+  ultima_foto_url?: string | null;
   latitude: number;
   longitude: number;
   created_at: string;
@@ -139,6 +140,9 @@ export interface Perfil {
   data_nascimento: string | null;
   rua: string | null;
   bairro_residencia: string | null;
+  termo_versao?: string | null;
+  termo_aceito_em?: string | null;
+  maioridade_declarada?: boolean | null;
 }
 
 export interface PerfilPublico {
@@ -172,6 +176,10 @@ export interface Ocorrencia {
   updated_at: string;
   categoria_principal: string | null;
   observacoes_revisao?: string | null;
+  /** Vencimento do ciclo de resolução (KAN-82). Estendido em 30 dias por `prorrogar`. */
+  prazo_resolucao: string | null;
+  /** Preenchido pela RPC quando a prorrogação única é utilizada. */
+  prorrogado_em: string | null;
   pontos_descarte?: { endereco: string | null; bairro: string | null; status: StatusPonto } | null;
 }
 
@@ -323,6 +331,8 @@ export interface OcorrenciaDetalheGestao {
     | 'longitude'
     | 'status'
     | 'tipo'
+    | 'prazo_resolucao'
+    | 'prorrogado_em'
   >;
   ponto: Pick<
     PontoGestor,
@@ -336,6 +346,7 @@ export interface OcorrenciaDetalheGestao {
   > | null;
   evidencias_paths: string[];
   historico_ponto: Omit<HistoricoStatusPonto, 'alterado_por'>[];
+  moderacoes?: Array<Pick<ModeracaoOcorrencia, 'id' | 'motivo' | 'status' | 'observacao' | 'created_at' | 'updated_at'>>;
   confirmacoes_distintas_ponto: number;
   ciclos_anteriores: number | null;
 }
@@ -389,6 +400,10 @@ export interface PontoProximo {
   confirmacoes: number;
   criticidade: number | null;
   recorrente: boolean;
+  endereco?: string | null;
+  bairro?: string | null;
+  subprefeitura?: string | null;
+  ultima_foto_url?: string | null;
 }
 
 /** Retorno de verificar_rate_limit(usuario_id) */
@@ -419,6 +434,19 @@ export interface ConfiguracoesParseadas {
   limite_denuncias_por_dia: number;
   dias_visibilidade_resolvido: number;
   ruido_geolocalizacao_metros: number;
+  /**
+   * KAN-79: dias do ciclo que disparam alerta de prazo (chave `alerta_prazo_dias`,
+   * valores separados por vírgula). Vazio quando a chave não existe.
+   */
+  alerta_prazo_dias: number[];
+  /** KAN-79: duração do ciclo de resolução (chave `prazo_ciclo_dias`). */
+  prazo_ciclo_dias: number | null;
+}
+
+/** Filtros aceitos pela listagem de pontos da gestão. */
+export interface PontosGestorFiltros {
+  status?: StatusPonto[];
+  categorias?: string[];
 }
 
 // ═══════════════════════════════════════════════
@@ -438,6 +466,8 @@ export interface ReportDraft {
   // Localização
   latitude: number;
   longitude: number;
+  endereco: string;
+  bairro: string;
 
   // Proximidade
   proximityResult: ProximityCheckResult | null;
@@ -464,6 +494,8 @@ export interface ProximityCheckResult {
 export const EMPTY_REPORT_DRAFT: ReportDraft = {
   latitude: 0,
   longitude: 0,
+  endereco: '',
+  bairro: '',
   proximityResult: null,
   confirmingPointId: null,
   categoria_principal: '',

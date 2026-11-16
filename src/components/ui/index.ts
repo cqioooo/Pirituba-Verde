@@ -6,5 +6,6 @@ export { Alert } from './Alert';
 export { Spinner } from './Spinner';
 export { BottomSheet } from './BottomSheet';
 export { Modal } from './Modal';
+export { ResponsiveDialog } from './ResponsiveDialog';
 export { Select } from './Select';
 export { Textarea } from './Textarea';

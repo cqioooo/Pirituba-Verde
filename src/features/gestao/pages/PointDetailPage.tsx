@@ -13,7 +13,7 @@ import {
   TIME_LABELS,
   classificarCriticidade 
 } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { formatarDataCurta } from '@/lib/moderacao';
 import { Button, Badge, Spinner, Card } from '@/components/ui';
 import { CriticidadeBadge } from '../components/CriticidadeBadge';
 import { StatusTimeline } from '../components/StatusTimeline';
@@ -141,7 +141,7 @@ export function PointDetailPage() {
                  <div key={oc.id} className="bg-surface-50 rounded-lg p-4 border border-surface-100">
                    <div className="flex justify-between items-start mb-2">
                      <span className="text-xs font-mono text-surface-500">{oc.id.split('-')[0]}</span>
-                     <span className="text-xs text-surface-500">{formatDate(oc.created_at)}</span>
+                     <span className="text-xs text-surface-600">{formatarDataCurta(oc.created_at) ?? 'Data indisponível'}</span>
                    </div>
                    <p className="text-sm text-surface-800">"{oc.descricao || 'Sem descrição'}"</p>
                  </div>

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { Button, Input, Alert } from '@/components/ui';
 import {
   validateEmail,
@@ -10,10 +10,11 @@ import {
   validateCPF,
   validatePhone,
   validateDateOfBirth,
-  validateNeighborhood,
-  validateStreet,
+  validateMajorityDeclaration,
+  validateTermsAcceptance,
 } from '../validators';
 import { formatCPF, formatPhone, formatDate } from '@/lib/utils';
+import { VERSAO_TERMO_ATUAL } from '@/lib/termos';
 import { Shield } from '@phosphor-icons/react';
 
 interface FormData {
@@ -26,6 +27,8 @@ interface FormData {
   email: string;
   password: string;
   passwordConfirmation: string;
+  maioridadeDeclarada: boolean;
+  termoAceito: boolean;
 }
 
 const initialFormData: FormData = {
@@ -38,6 +41,8 @@ const initialFormData: FormData = {
   email: '',
   password: '',
   passwordConfirmation: '',
+  maioridadeDeclarada: false,
+  termoAceito: false,
 };
 
 export function RegisterForm() {
@@ -49,9 +54,9 @@ export function RegisterForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  function updateField(field: keyof FormData, value: string) {
+  function updateField<K extends keyof FormData>(field: K, value: FormData[K]) {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Limpar erro do campo ao digitar
+    // Limpar erro do campo ao digitar/marcar
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -65,15 +70,15 @@ export function RegisterForm() {
     const newErrors: Record<string, string> = {};
 
     const checks: [string, string | null][] = [
-      ['fullName', validateFullName(formData.fullName)],
-      ['cpf', formData.cpf ? validateCPF(formData.cpf) : null],
-      ['dateOfBirth', validateDateOfBirth(formData.dateOfBirth)],
-      ['neighborhood', validateNeighborhood(formData.neighborhood)],
-      ['street', validateStreet(formData.street)],
-      ['phone', validatePhone(formData.phone)],
       ['email', validateEmail(formData.email)],
       ['password', validatePassword(formData.password)],
       ['passwordConfirmation', validatePasswordConfirmation(formData.password, formData.passwordConfirmation)],
+      ['maioridadeDeclarada', validateMajorityDeclaration(formData.maioridadeDeclarada)],
+      ['termoAceito', validateTermsAcceptance(formData.termoAceito)],
+      ['fullName', formData.fullName.trim() ? validateFullName(formData.fullName) : null],
+      ['cpf', formData.cpf.trim() ? validateCPF(formData.cpf) : null],
+      ['dateOfBirth', formData.dateOfBirth.trim() ? validateDateOfBirth(formData.dateOfBirth) : null],
+      ['phone', formData.phone.trim() ? validatePhone(formData.phone) : null],
     ];
 
     for (const [field, error] of checks) {
@@ -91,14 +96,18 @@ export function RegisterForm() {
 
     try {
       await register({
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
-        fullName: formData.fullName,
-        cpf: formData.cpf.replace(/\D/g, ''),
-        dateOfBirth: formData.dateOfBirth,
-        neighborhood: formData.neighborhood,
-        street: formData.street,
-        phone: formData.phone.replace(/\D/g, ''),
+        fullName: formData.fullName.trim() || undefined,
+        cpf: formData.cpf.replace(/\D/g, '') || undefined,
+        dateOfBirth: formData.dateOfBirth.trim() || undefined,
+        neighborhood: formData.neighborhood.trim() || undefined,
+        street: formData.street.trim() || undefined,
+        phone: formData.phone.replace(/\D/g, '') || undefined,
+        maioridadeDeclarada: formData.maioridadeDeclarada,
+        termoAceito: formData.termoAceito,
+        termoVersao: VERSAO_TERMO_ATUAL,
+        termoAceitoEm: new Date().toISOString(),
       });
       setSuccess(true);
     } catch (err) {
@@ -141,85 +150,10 @@ export function RegisterForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        {/* Dados pessoais */}
+        {/* Acesso (obrigatório) */}
         <fieldset className="space-y-4">
           <legend className="text-sm font-semibold text-surface-700 mb-2">
-            Dados pessoais
-          </legend>
-
-          <Input
-            label="Nome completo"
-            placeholder="Maria Silva Santos"
-            value={formData.fullName}
-            onChange={(e) => updateField('fullName', e.target.value)}
-            error={errors.fullName}
-            required
-            autoComplete="name"
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="CPF (Opcional)"
-              placeholder="000.000.000-00"
-              value={formData.cpf}
-              onChange={(e) => updateField('cpf', formatCPF(e.target.value))}
-              error={errors.cpf}
-              hint="Necessário se quiser validar sua identidade na moderação."
-              inputMode="numeric"
-            />
-            <Input
-              label="Data de nascimento"
-              placeholder="DD/MM/AAAA"
-              value={formData.dateOfBirth}
-              onChange={(e) => updateField('dateOfBirth', formatDate(e.target.value))}
-              error={errors.dateOfBirth}
-              required
-              inputMode="numeric"
-            />
-          </div>
-        </fieldset>
-
-        {/* Endereço */}
-        <fieldset className="space-y-4">
-          <legend className="text-sm font-semibold text-surface-700 mb-2">
-            Endereço
-          </legend>
-
-          <Input
-            label="Bairro"
-            placeholder="Ex: Pirituba"
-            value={formData.neighborhood}
-            onChange={(e) => updateField('neighborhood', e.target.value)}
-            error={errors.neighborhood}
-            required
-          />
-
-          <Input
-            label="Rua"
-            placeholder="Apenas o nome da rua, ex: Rua Paula Ferreira"
-            value={formData.street}
-            onChange={(e) => updateField('street', e.target.value)}
-            error={errors.street}
-            required
-            hint="Não inclua o número da residência por privacidade."
-          />
-
-          <Input
-            label="Celular"
-            placeholder="(11) 91234-5678"
-            value={formData.phone}
-            onChange={(e) => updateField('phone', formatPhone(e.target.value))}
-            error={errors.phone}
-            hint="Para contato sobre suas denúncias, se necessário."
-            required
-            inputMode="tel"
-          />
-        </fieldset>
-
-        {/* Acesso */}
-        <fieldset className="space-y-4">
-          <legend className="text-sm font-semibold text-surface-700 mb-2">
-            Acesso
+            Dados de acesso
           </legend>
 
           <Input
@@ -256,13 +190,119 @@ export function RegisterForm() {
           />
         </fieldset>
 
+        {/* Informações opcionais de perfil */}
+        <details className="rounded-xl border border-surface-200 bg-surface-50/70 p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-surface-700">
+            Dados complementares (opcionais)
+          </summary>
+          <div className="mt-4 space-y-4">
+            <Input
+              label="Nome completo (Opcional)"
+              placeholder="Maria Silva Santos"
+              value={formData.fullName}
+              onChange={(e) => updateField('fullName', e.target.value)}
+              error={errors.fullName}
+              autoComplete="name"
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="CPF (Opcional)"
+                placeholder="000.000.000-00"
+                value={formData.cpf}
+                onChange={(e) => updateField('cpf', formatCPF(e.target.value))}
+                error={errors.cpf}
+                hint="CPF não é exigido para cadastrar ou denunciar."
+                inputMode="numeric"
+              />
+              <Input
+                label="Data de nascimento (Opcional)"
+                placeholder="DD/MM/AAAA"
+                value={formData.dateOfBirth}
+                onChange={(e) => updateField('dateOfBirth', formatDate(e.target.value))}
+                error={errors.dateOfBirth}
+                inputMode="numeric"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Bairro (Opcional)"
+                placeholder="Ex: Pirituba"
+                value={formData.neighborhood}
+                onChange={(e) => updateField('neighborhood', e.target.value)}
+              />
+              <Input
+                label="Celular (Opcional)"
+                placeholder="(11) 91234-5678"
+                value={formData.phone}
+                onChange={(e) => updateField('phone', formatPhone(e.target.value))}
+                error={errors.phone}
+                inputMode="tel"
+              />
+            </div>
+
+            <Input
+              label="Rua (Opcional)"
+              placeholder="Apenas o nome da rua, ex: Rua Paula Ferreira"
+              value={formData.street}
+              onChange={(e) => updateField('street', e.target.value)}
+              hint="Não inclua o número da residência por privacidade."
+            />
+          </div>
+        </details>
+
+        {/* Consentimento e maioridade */}
+        <fieldset className="space-y-3 rounded-xl border border-surface-200 bg-white p-4">
+          <legend className="px-1 text-sm font-semibold text-surface-800">
+            Termo de uso e maioridade
+          </legend>
+
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer text-sm text-surface-800">
+              <input
+                type="checkbox"
+                checked={formData.maioridadeDeclarada}
+                onChange={(e) => updateField('maioridadeDeclarada', e.target.checked)}
+                aria-invalid={Boolean(errors.maioridadeDeclarada)}
+                className="mt-1 h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>Declaro ter 18 anos ou mais.</span>
+            </label>
+            {errors.maioridadeDeclarada && (
+              <p className="mt-1 text-xs text-danger-700" role="alert">
+                {errors.maioridadeDeclarada}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer text-sm text-surface-800">
+              <input
+                type="checkbox"
+                checked={formData.termoAceito}
+                onChange={(e) => updateField('termoAceito', e.target.checked)}
+                aria-invalid={Boolean(errors.termoAceito)}
+                className="mt-1 h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>
+                Li e aceito o Termo de Uso e Aviso de Privacidade (versão {VERSAO_TERMO_ATUAL}).
+              </span>
+            </label>
+            {errors.termoAceito && (
+              <p className="mt-1 text-xs text-danger-700" role="alert">
+                {errors.termoAceito}
+              </p>
+            )}
+          </div>
+        </fieldset>
+
         {/* Info de privacidade */}
         <div className="flex gap-2 p-3 bg-primary-50 rounded-lg">
           <Shield className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
           <p className="text-xs text-primary-800 leading-relaxed">
             Seus dados são protegidos e utilizados apenas para validação
-            de identidade e comunicação sobre denúncias. Não compartilhamos
-            informações com terceiros.
+            de conta e acompanhamento das denúncias. A versão e a data do aceite são registradas.
           </p>
         </div>
 

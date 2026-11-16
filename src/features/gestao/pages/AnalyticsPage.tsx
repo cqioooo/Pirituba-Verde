@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChartLineUp } from '@phosphor-icons/react';
 
-import type { AnalyticsFilters } from '@/types/analytics';
+import type { AnalyticsFilters, DistributionData } from '@/types/analytics';
 import type { DrilldownState } from '@/types/operational';
 
 import { AnalyticsFiltersBar } from '../components/analytics/AnalyticsFiltersBar';
@@ -74,13 +74,13 @@ export function AnalyticsPage() {
   };
   const closeDrilldown = () => setDrilldown(DRILLDOWN_CLOSED);
 
-  const handleStatusClick = (payload: any) => {
+  const handleStatusClick = (payload: DistributionData) => {
     if (payload?.label) openDrilldown('status', 'status', payload.label, `Pontos: ${payload.label}`);
   };
-  const handleCategoryClick = (payload: any) => {
+  const handleCategoryClick = (payload: DistributionData) => {
     if (payload?.label) openDrilldown('categoria', 'categoria', payload.label, `Categoria: ${payload.label}`);
   };
-  const handleRecurrenceClick = (payload: any) => {
+  const handleRecurrenceClick = (payload: DistributionData) => {
     if (payload?.label) openDrilldown('recorrencia', 'bairro', payload.label, `Recorrência: ${payload.label}`);
   };
 

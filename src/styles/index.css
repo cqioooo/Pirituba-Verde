@@ -30,12 +30,16 @@
   --color-danger-50: #FEF2F2;
   --color-danger-500: #DC2626;
   --color-danger-600: #B91C1C;
+  --color-danger-700: #991B1B;
   --color-warning-50: #FFFBEB;
   --color-warning-500: #D97706;
+  --color-warning-700: #92400E;
   --color-info-50: #EFF6FF;
   --color-info-500: #2563EB;
+  --color-info-700: #1D4ED8;
   --color-success-50: #F0FDF4;
   --color-success-500: #16A34A;
+  --color-success-700: #166534;
   
   --color-severity-low: #8ea37b;
   --color-severity-medium: #b08b3c;
@@ -114,6 +118,20 @@ input,
 select,
 textarea {
   transition: all 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ── Remover estilos padrão de input number ── */
